@@ -18,7 +18,7 @@ jobs:
         run: docker build -t assassyn:latest .
       - name: Initialize the Container
         run: |
-          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest --name assassyn
+          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
           sleep 2
           docker exec assassyn ./init.sh
       - name: Run Python Lint

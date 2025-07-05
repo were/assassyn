@@ -15,10 +15,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build Container
-        run: docker build -t assassyn-dev .
+        run: docker build -t assassyn:latest .
+      - name: Stop Existing Container
+        run: |
+          docker stop assassyn || true
+          docker container rm assassyn || true
+      - name: Run Container
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
+      - name: Initialize Container
+        run: |
+          docker exec assassyn /app/init.sh
       - name: Run Python Lint
         run:
-          docker run --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn-dev pylint --rcfile python/.pylintrc python/assassyn
+          docker exec assassyn pylint --rcfile python/.pylintrc python/assassyn
       - name: Python Frontend Unit Tests
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn-dev pytest -n 8 python/unit-tests
+          docker exec assassyn pytest -n 8 python/unit-tests

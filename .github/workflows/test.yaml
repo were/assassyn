@@ -16,17 +16,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build Container
         run: docker build -t assassyn:latest .
-      - name: Stop Existing Container
+      - name: Initialize the Container
         run: |
-          docker stop assassyn || true
-          docker container rm assassyn || true
-      - name: Run Container
-        run: |
-          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
-          docker ps -a
-          docker logs assassyn
-      - name: Initialize Container
-        run: |
+          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest --name assassyn
+          sleep 2
           docker exec assassyn ./init.sh
       - name: Run Python Lint
         run:

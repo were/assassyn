@@ -22,12 +22,13 @@ jobs:
           docker container rm assassyn || true
       - name: Initialize the Container
         run: |
-          docker run --rm -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
-          sleep 2
-          docker exec assassyn ./init.sh
+          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest ./init.sh
       - name: Run Python Lint
         run:
-          docker exec assassyn pylint --rcfile python/.pylintrc python/assassyn
+          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest pylint --rcfile python/.pylintrc python/assassyn
       - name: Python Frontend Unit Tests
         run: |
-          docker exec assassyn pytest -n 8 python/unit-tests
+          docker run -d -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) assassyn:latest pytest -n 8 python/unit-tests
+      - name: Cleanup Containers
+        run: |
+          docker rm -f $(docker ps -a --filter ancestor=assassyn:latest -q) 2>/dev/null || true

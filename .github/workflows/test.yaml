@@ -22,7 +22,7 @@ jobs:
           docker container rm assassyn || true
       - name: Run Container
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
+          docker run -d --rm -v ${{ github.workspace }}:/app --user $(id -u):$(id -g) --name assassyn assassyn:latest
       - name: Initialize Container
         run: |
           docker exec assassyn ./init.sh

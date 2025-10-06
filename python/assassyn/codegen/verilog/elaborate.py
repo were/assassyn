@@ -98,7 +98,7 @@ def elaborate(sys: SysBuilder, **kwargs) -> str:
     """
 
     path = kwargs.get('path', os.getcwd())
-    path = Path(path) / f"{sys.name}_verilog"
+    path = Path(path) / "verilog"
 
     create_and_clean_dir(path)
 

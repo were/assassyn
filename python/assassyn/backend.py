@@ -77,6 +77,9 @@ def elaborate(# pylint: disable=too-many-locals
 
     make_existing_dir(sys_dir)
 
+    # Update the path in config to point to the system directory
+    real_config['path'] = str(sys_dir)
+
     simulator_manifest, verilog_path = codegen.codegen(sys, **real_config)
 
     return [simulator_manifest, verilog_path]

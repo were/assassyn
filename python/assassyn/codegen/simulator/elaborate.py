@@ -21,7 +21,7 @@ def elaborate_impl(sys, config):
     This matches the Rust function in src/backend/simulator/elaborate.rs
     """
     # Create and clean the simulator directory
-    simulator_name = config.get('dirname', f"{sys.name}_simulator")
+    simulator_name = config.get('dirname', "simulator")
     simulator_path = Path(config.get('path', os.getcwd())) / simulator_name
 
     # Clean directory if it exists and override is enabled

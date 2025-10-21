@@ -142,7 +142,6 @@ def has_verilator():
         subprocess.run(
             [sys.executable, '-c', 'import pycde'],
             check=True,
-            env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )

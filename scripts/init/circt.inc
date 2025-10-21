@@ -32,8 +32,7 @@ check-pycde-installed:
 # Install PyCDE from existing wheel
 install-pycde-wheel:
 	@echo "Step 2: PyCDE wheel found, installing..."
-	@. $(VENV_DIR)/bin/activate && \
-		pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl
+	@$(VENV_DIR)/bin/pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl
 	@echo "PyCDE installed successfully from existing wheel."
 
 # Try to install PyCDE via pip
@@ -53,8 +52,7 @@ build-pycde-source:
 		CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON" \
 		$(VENV_DIR)/bin/python -m build -C 3rd-party/circt/frontends/PyCDE
 	@echo "Step 4: Installing PyCDE wheel..."
-	@. $(VENV_DIR)/bin/activate && \
-		pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl
+	@$(VENV_DIR)/bin/pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl
 	@echo "PyCDE built and installed successfully from source."
 
 # Verify PyCDE installation
@@ -78,7 +76,7 @@ verify-pycde-installation:
 clean-circt:
 	@echo "Cleaning CIRCT build artifacts and uninstalling PyCDE..."
 	@if [ -d "$(VENV_DIR)" ]; then \
-		. $(VENV_DIR)/bin/activate && pip uninstall -y pycde 2>/dev/null || true; \
+		$(VENV_DIR)/bin/pip uninstall -y pycde 2>/dev/null || true; \
 	fi
 	@rm -rf 3rd-party/circt/dist 3rd-party/circt/build 3rd-party/circt/*.egg-info 2>/dev/null || true
 	@bash scripts/patch-apply.sh reverse scripts/init/patches/circt.patch 2>/dev/null || true

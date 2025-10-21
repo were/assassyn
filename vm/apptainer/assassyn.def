@@ -19,7 +19,7 @@ export CARGO_TARGET_DIR="/app/.sim-runtime-cache"
 make build-verilator
 make build-ramulator2
 make build-wrapper
-make build-circt
+make install-circt
 
 # Add PyCDE to PYTHONPATH if it exists
 if [ -d "/app/3rd-party/circt/frontends/PyCDE/dist/lib" ]; then

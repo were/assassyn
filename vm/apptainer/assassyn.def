@@ -19,6 +19,9 @@ export CARGO_TARGET_DIR="/app/.sim-runtime-cache"
 make build-verilator
 make build-ramulator2
 make build-wrapper
+
+# Set fallback version for CIRCT setuptools-scm when git metadata is unavailable
+export SETUPTOOLS_SCM_PRETEND_VERSION="unknown"
 make install-circt
 
 # Add PyCDE to PYTHONPATH if it exists
@@ -38,6 +41,7 @@ export CCACHE_DIR="/tmp/ccache"
 export CARGO_HOME="/tmp/cargo"
 export VIRTUAL_ENV="/app/.assassyn-venv"
 export PATH="/app/.assassyn-venv/bin:\$VERILATOR_ROOT/bin:\$PATH"
+export SETUPTOOLS_SCM_PRETEND_VERSION="unknown"
 EOF
 ZSHEOF
 

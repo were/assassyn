@@ -25,7 +25,7 @@ build-pycde-source:
 	@echo "Building PyCDE from source..."
 	@cd 3rd-party/circt/frontends/PyCDE && \
 	CIRCT_DIRECTORY="$(CURDIR)/3rd-party/circt" \
-	CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON -DLLVM_FORCE_VC_REPOSITORY=https://github.com/Synthesys-Lab/assassyn.git" \
+	CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON" \
 	../../../../$(VENV_DIR)/bin/python -m build
 	@echo "PyCDE built successfully from source."
 
@@ -66,7 +66,7 @@ clean-circt:
 	@if [ -d "$(VENV_DIR)" ]; then \
 		$(VENV_DIR)/bin/pip uninstall -y pycde 2>/dev/null || true; \
 	fi
-	@rm -rf 3rd-party/circt/dist 3rd-party/circt/build 3rd-party/circt/*.egg-info 2>/dev/null || true
+	rm -rf 3rd-party/circt/frontends/PyCDE/dist 3rd-party/circt/frontends/PyCDE/*.egg-info
 	@bash scripts/patch-apply.sh reverse scripts/init/patches/circt.patch 2>/dev/null || true
-	@rm -f 3rd-party/circt/.patch-applied 3rd-party/circt/.circt-built
+	rm -f 3rd-party/circt/.patch-applied 3rd-party/circt/.circt-built
 	@echo "CIRCT clean completed."

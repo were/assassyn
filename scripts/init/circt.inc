@@ -23,9 +23,10 @@ install-circt: install-py-package 3rd-party/circt/.circt-built
 # Build PyCDE from source
 build-pycde-source:
 	@echo "Building PyCDE from source..."
-	@CIRCT_DIRECTORY="$(CURDIR)/3rd-party/circt" \
+	@cd 3rd-party/circt/frontends/PyCDE && \
+	CIRCT_DIRECTORY="$(CURDIR)/3rd-party/circt" \
 	CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON" \
-	$(VENV_DIR)/bin/python -m build -C 3rd-party/circt/frontends/PyCDE
+	../../../../$(VENV_DIR)/bin/python -m build
 	@echo "PyCDE built successfully from source."
 
 # Verify PyCDE installation

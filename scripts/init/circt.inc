@@ -46,7 +46,7 @@ verify-pycde-installation:
 		if [ ! -f "3rd-party/circt/frontends/PyCDE/dist/"*.whl ]; then \
 			echo "No wheel found, building PyCDE from source..."; \
 			$(MAKE) build-pycde-source; \
-		fi && \
+		fi
 		# Install from wheel
 		echo "Installing PyCDE from wheel..."; \
 		$(VENV_DIR)/bin/pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl && \

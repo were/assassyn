@@ -21,8 +21,9 @@ make build-ramulator2
 make build-wrapper
 
 # Set fallback version for CIRCT setuptools-scm when git metadata is unavailable
-export SETUPTOOLS_SCM_PRETEND_VERSION="unknown"
-make install-circt
+export SETUPTOOLS_SCM_PRETEND_VERSION="0.0.0"
+export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYCDE="0.0.0"
+SETUPTOOLS_SCM_PRETEND_VERSION="0.0.0" SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYCDE="0.0.0" make install-circt
 
 # Add PyCDE to PYTHONPATH if it exists
 if [ -d "/app/3rd-party/circt/frontends/PyCDE/dist/lib" ]; then
@@ -41,7 +42,8 @@ export CCACHE_DIR="/tmp/ccache"
 export CARGO_HOME="/tmp/cargo"
 export VIRTUAL_ENV="/app/.assassyn-venv"
 export PATH="/app/.assassyn-venv/bin:\$VERILATOR_ROOT/bin:\$PATH"
-export SETUPTOOLS_SCM_PRETEND_VERSION="unknown"
+export SETUPTOOLS_SCM_PRETEND_VERSION="0.0.0"
+export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYCDE="0.0.0"
 EOF
 ZSHEOF
 

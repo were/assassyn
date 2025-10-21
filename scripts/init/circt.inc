@@ -25,7 +25,7 @@ build-pycde-source:
 	@echo "Building PyCDE from source..."
 	@cd 3rd-party/circt/frontends/PyCDE && \
 	CIRCT_DIRECTORY="$(CURDIR)/3rd-party/circt" \
-	CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON" \
+	CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON -DLLVM_FORCE_VC_REPOSITORY=https://github.com/llvm/llvm-project.git" \
 	SETUPTOOLS_SCM_PRETEND_VERSION="0.0.0" \
 	SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYCDE="0.0.0" \
 	../../../../$(VENV_DIR)/bin/python -m build

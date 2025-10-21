@@ -63,11 +63,12 @@ $(APPTAINER_OUTPUT_DIR)/ramulator2-%.tar.gz: 3rd-party/ramulator2
 $(APPTAINER_OUTPUT_DIR)/circt-%.tar.gz: 3rd-party/circt
 	@echo "=== Archiving circt ($*) ==="
 	@mkdir -p $(APPTAINER_OUTPUT_DIR)
+	@mkdir -p /tmp/circt-temp
 	@cd 3rd-party/circt && \
-		git archive --format=tar --prefix=circt/ HEAD > /tmp/circt-combined.tar && \
-		git submodule foreach 'git archive --format=tar --prefix=circt/$$sm_path/ HEAD >> /tmp/circt-combined.tar' && \
-		gzip -c /tmp/circt-combined.tar > $@ && \
-		rm -f /tmp/circt-combined.tar
+		git archive --format=tar --prefix=circt/ HEAD | tar -xf - -C /tmp/circt-temp && \
+		cd llvm && git archive --format=tar --prefix=circt/llvm/ HEAD | tar -xf - -C /tmp/circt-temp && \
+		cd /tmp/circt-temp && tar -czf $@ . && \
+		rm -rf /tmp/circt-temp
 	@echo "Archive created: $@"
 
 $(APPTAINER_OUTPUT_DIR)/verilator-%.tar.gz: 3rd-party/verilator

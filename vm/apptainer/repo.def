@@ -43,6 +43,8 @@ From: /tmp/base.sif
     ls -la 3rd-party/
     echo "Checking circt submodule..."
     ls -la 3rd-party/circt/ | head -10
+    echo "Checking circt llvm submodule..."
+    ls -la 3rd-party/circt/llvm/ | head -10
     echo "Checking verilator submodule..."
     ls -la 3rd-party/verilator/ | head -10
     echo "Checking ramulator2 submodule..."

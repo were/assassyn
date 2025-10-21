@@ -18,7 +18,7 @@ patch-circt: 3rd-party/circt/.patch-applied
 		fi && \
 		touch $(CURDIR)/3rd-party/circt/.patch-applied
 
-install-circt: 3rd-party/circt/.circt-built
+install-circt: install-py-package 3rd-party/circt/.circt-built
 
 # Build PyCDE from source
 build-pycde-source:

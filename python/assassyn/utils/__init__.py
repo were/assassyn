@@ -125,16 +125,13 @@ def has_verilator():
     # pylint: disable=global-statement
     global VERILATOR_CACHE
     if VERILATOR_CACHE is not None:
-        print('cache hit')
         return VERILATOR_CACHE
 
     verilator_root = os.environ.get('VERILATOR_ROOT')
     if not verilator_root:
-        print('no verilator root')
         VERILATOR_CACHE = None
         return VERILATOR_CACHE
     if not os.path.isdir(verilator_root):
-        print('no verilator root')
         VERILATOR_CACHE = None
         return VERILATOR_CACHE
 
@@ -146,7 +143,6 @@ def has_verilator():
             stderr=subprocess.DEVNULL,
         )
     except (FileNotFoundError, subprocess.CalledProcessError):
-        print('no pycde for verilator')
         VERILATOR_CACHE = None
     else:
         VERILATOR_CACHE = 'verilator'

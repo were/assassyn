@@ -23,6 +23,13 @@ From: /tmp/base.sif
     rm -f /3rd-party/*-*.tar.gz
     rm -rf examples/ docs/ tutorials/
 
+    # Remove existing venv and create fresh one for container
+    rm -rf /app/.assassyn-venv
+    python3 -m venv /app/.assassyn-venv
+    /app/.assassyn-venv/bin/pip install --upgrade pip
+    /app/.assassyn-venv/bin/pip install build
+    /app/.assassyn-venv/bin/pip install -r /app/python/requirements.txt
+
 %runscript
     exec "\$@"
 

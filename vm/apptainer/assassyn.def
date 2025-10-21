@@ -5,13 +5,6 @@ From: /tmp/repo.sif
     /bin/zsh << ZSHEOF
 cd /app
 
-# Remove existing venv and create fresh one for container
-rm -rf /app/.assassyn-venv
-python3 -m venv /app/.assassyn-venv
-/app/.assassyn-venv/bin/pip install --upgrade pip
-/app/.assassyn-venv/bin/pip install build
-/app/.assassyn-venv/bin/pip install -r /app/python/requirements.txt
-
 # Source the virtual environment
 source /app/.assassyn-venv/bin/activate
 

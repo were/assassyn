@@ -39,14 +39,86 @@ From: /tmp/base.sif
     cd /app
     echo "Checking repository structure..."
     ls -la
-    echo "Checking submodules..."
+    
+    echo "=== Checking submodules ==="
+    echo "Checking 3rd-party directory..."
     ls -la 3rd-party/
-    echo "Checking circt submodule..."
-    ls -la 3rd-party/circt/ | head -10
-    echo "Checking circt llvm submodule..."
-    ls -la 3rd-party/circt/llvm/ | head -10
-    echo "Checking verilator submodule..."
-    ls -la 3rd-party/verilator/ | head -10
-    echo "Checking ramulator2 submodule..."
-    ls -la 3rd-party/ramulator2/ | head -10
-    echo "Repo container test completed."
+    
+    # Check circt submodule
+    echo "=== Checking circt submodule ==="
+    if [ -d "3rd-party/circt" ]; then
+        echo "✓ circt directory exists"
+        echo "circt contents:"
+        ls -la 3rd-party/circt/ | head -10
+        
+        # Check if circt is not empty
+        if [ "$(ls -A 3rd-party/circt)" ]; then
+            echo "✓ circt submodule is not empty"
+        else
+            echo "✗ ERROR: circt submodule is empty"
+            exit 1
+        fi
+        
+        # Check circt llvm submodule
+        echo "=== Checking circt llvm submodule ==="
+        if [ -d "3rd-party/circt/llvm" ]; then
+            echo "✓ circt/llvm directory exists"
+            echo "circt/llvm contents:"
+            ls -la 3rd-party/circt/llvm/ | head -10
+            
+            # Check if llvm is not empty
+            if [ "$(ls -A 3rd-party/circt/llvm)" ]; then
+                echo "✓ circt/llvm submodule is not empty"
+            else
+                echo "✗ ERROR: circt/llvm submodule is empty"
+                exit 1
+            fi
+        else
+            echo "✗ ERROR: circt/llvm directory does not exist"
+            exit 1
+        fi
+    else
+        echo "✗ ERROR: circt directory does not exist"
+        exit 1
+    fi
+    
+    # Check verilator submodule
+    echo "=== Checking verilator submodule ==="
+    if [ -d "3rd-party/verilator" ]; then
+        echo "✓ verilator directory exists"
+        echo "verilator contents:"
+        ls -la 3rd-party/verilator/ | head -10
+        
+        # Check if verilator is not empty
+        if [ "$(ls -A 3rd-party/verilator)" ]; then
+            echo "✓ verilator submodule is not empty"
+        else
+            echo "✗ ERROR: verilator submodule is empty"
+            exit 1
+        fi
+    else
+        echo "✗ ERROR: verilator directory does not exist"
+        exit 1
+    fi
+    
+    # Check ramulator2 submodule
+    echo "=== Checking ramulator2 submodule ==="
+    if [ -d "3rd-party/ramulator2" ]; then
+        echo "✓ ramulator2 directory exists"
+        echo "ramulator2 contents:"
+        ls -la 3rd-party/ramulator2/ | head -10
+        
+        # Check if ramulator2 is not empty
+        if [ "$(ls -A 3rd-party/ramulator2)" ]; then
+            echo "✓ ramulator2 submodule is not empty"
+        else
+            echo "✗ ERROR: ramulator2 submodule is empty"
+            exit 1
+        fi
+    else
+        echo "✗ ERROR: ramulator2 directory does not exist"
+        exit 1
+    fi
+    
+    echo "=== All submodule checks passed ==="
+    echo "Repo container test completed successfully."

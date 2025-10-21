@@ -56,7 +56,15 @@ ZSHEOF
     cd /app
     echo "Testing basic Python import..."
     /app/.assassyn-venv/bin/python -c 'import sys; print(f"Python {sys.version}")'
-    /app/.assassyn-venv/bin/python -c 'import pycde'
+    
+    echo "Testing PyCDE import..."
+    if /app/.assassyn-venv/bin/python -c 'import pycde'; then
+        echo "✓ PyCDE import successful"
+    else
+        echo "✗ ERROR: PyCDE import failed"
+        exit 1
+    fi
+    
     echo "Testing Verilator installation..."
     if [ -x "/app/3rd-party/verilator/bin/verilator" ]; then
         /app/3rd-party/verilator/bin/verilator --version

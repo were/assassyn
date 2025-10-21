@@ -22,20 +22,27 @@ install-circt: 3rd-party/circt/.circt-built
 
 # Marker file to track build completion
 3rd-party/circt/.circt-built: patch-circt
-	@if [ -f "$@" ]; then \
-		echo "CIRCT already built — skipping build step."; \
+	@echo "Installing PyCDE..."; \
+	echo "Step 1: Checking if PyCDE is already installed..."; \
+	if . .assassyn-venv/bin/python -c "import pycde" 2>/dev/null; then \
+		echo "PyCDE is already installed — skipping installation."; \
+		touch $(CURDIR)/$@; \
 	else \
-		echo "Installing PyCDE..."; \
-		echo "Step 1: Checking if PyCDE is already installed..."; \
-		if . .assassyn-venv/bin/python -c "import pycde" 2>/dev/null; then \
-			echo "PyCDE is already installed — skipping installation."; \
+		echo "PyCDE not found. Checking if already built..."; \
+		if [ -f "3rd-party/circt/frontends/PyCDE/dist/"*.whl ]; then \
+			echo "Step 2: PyCDE wheel found, installing..."; \
+			if ! (cd 3rd-party/circt/frontends/PyCDE && \
+				. $$(pwd)/../../../../.assassyn-venv/bin/activate && pip install ./dist/*.whl); then \
+				echo "ERROR: Failed to install PyCDE wheel."; \
+				exit 1; \
+			fi; \
+			echo "PyCDE installed successfully from existing wheel."; \
 		else \
-			echo "PyCDE not found. Proceeding with installation..."; \
-			echo "Step 2: Attempting to install PyCDE via pip..."; \
-			if . .assassyn-venv/bin/pip install pycde ; then \
+			echo "Step 2: No existing wheel found. Attempting to install PyCDE via pip..."; \
+			if . .assassyn-venv/bin/pip install pycde 2>/dev/null; then \
 				echo "PyCDE installed successfully via pip."; \
 			else \
-				echo "Failed to install PyCDE via pip. Proceeding to source installation..."; \
+				echo "Failed to install PyCDE via pip. Proceeding to build from source..."; \
 				echo "Step 3: Building PyCDE from source..."; \
 				if ! (cd 3rd-party/circt/frontends/PyCDE && \
 					CIRCT_DIRECTORY="$$(pwd)/../../" CIRCT_EXTRA_CMAKE_ARGS="-DESI_RUNTIME=OFF -DZ3_DISABLE=ON -DOR_TOOLS_DISABLE=ON" \
@@ -43,16 +50,16 @@ install-circt: 3rd-party/circt/.circt-built
 					echo "ERROR: Failed to build PyCDE from source."; \
 					exit 1; \
 				fi; \
-				echo "Installing PyCDE wheel..."; \
+				echo "Step 4: Installing PyCDE wheel..."; \
 				if ! (cd 3rd-party/circt/frontends/PyCDE && \
-					. $$(pwd)/../../../../.assassyn-venv/bin/activate && pip install --force-reinstall ./dist/*.whl); then \
+					. $$(pwd)/../../../../.assassyn-venv/bin/activate && pip install ./dist/*.whl); then \
 					echo "ERROR: Failed to install PyCDE wheel."; \
 					exit 1; \
 				fi; \
 				echo "PyCDE built and installed successfully from source."; \
 			fi; \
 		fi; \
-		echo "Step 4: Verifying PyCDE installation..."; \
+		echo "Step 5: Verifying PyCDE installation..."; \
 		if ! (. .assassyn-venv/bin/python -c "import pycde; print('PyCDE version:', getattr(pycde, '__version__', 'unknown'))"); then \
 			echo "ERROR: PyCDE installation verification failed. pycde module cannot be imported."; \
 			exit 1; \

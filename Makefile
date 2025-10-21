@@ -1,7 +1,7 @@
 # Master Makefile for Assassyn project
 # This Makefile provides a unified interface for building, testing, and cleaning the project
 
-.PHONY: all env env-source build-all test-all clean-all install-py-package clean-python build-verilator clean-verilator build-ramulator2 build-wrapper clean-ramulator2 clean-wrapper install-circt clean-circt rust-lint pylint build-apptainer-base build-apptainer-repo build-apptainer clean-apptainer-base clean-apptainer-repo clean-apptainer patch-all patch-ramulator2 patch-circt patch-verilator
+.PHONY: all env env-source build-all test-all clean-all clean-built install-py-package clean-python build-verilator clean-verilator build-ramulator2 build-wrapper clean-ramulator2 clean-wrapper install-circt clean-circt rust-lint pylint build-apptainer-base build-apptainer-repo build-apptainer clean-apptainer-base clean-apptainer-repo clean-apptainer patch-all patch-ramulator2 patch-circt patch-verilator
 
 # Virtual environment directory (shared across all Python-related targets)
 VENV_DIR := .assassyn-venv
@@ -35,6 +35,15 @@ test-all: build-all
 
 # Clean all components
 clean-all: clean-python clean-verilator clean-ramulator2 clean-wrapper clean-circt
+
+# Clean all build marker files (.xxx-built)
+clean-built:
+	@echo "Cleaning all build marker files..."
+	@rm -f 3rd-party/verilator/.verilator-built
+	@rm -f 3rd-party/ramulator2/.ramulator2-built
+	@rm -f tools/c-ramulator2-wrapper/.wrapper-built
+	@rm -f 3rd-party/circt/.circt-built
+	@echo "All build marker files cleaned."
 
 # Rust linting targets
 rust-lint:

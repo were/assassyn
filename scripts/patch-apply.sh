@@ -10,12 +10,12 @@ PATCH_FILE="$2"
 MODE="$1"
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 [apply|reverse|check] <patch-file>"
+    echo "Usage: $0 [apply|reverse|check] <patch-file>" >&2
     exit 1
 fi
 
 if [ ! -f "$PATCH_FILE" ]; then
-    echo "Error: Patch file '$PATCH_FILE' not found"
+    echo "Error: Patch file '$PATCH_FILE' not found" >&2
     exit 1
 fi
 
@@ -66,7 +66,7 @@ apply_patch() {
             if [ "$in_replacement" = true ]; then
                 replacement_lines+=("${line:1}")  # Remove the + prefix
             else
-                echo "Error: Found + line without preceding - line"
+                echo "Error: Found + line without preceding - line" >&2
                 exit 1
             fi
         fi
@@ -86,7 +86,7 @@ process_file() {
     local replacements=("$@")
     
     if [ ! -f "$file_path" ]; then
-        echo "Error: Target file '$file_path' not found"
+        echo "Error: Target file '$file_path' not found" >&2
         exit 1
     fi
     
@@ -115,7 +115,7 @@ process_file() {
     done < "$file_path"
     
     if [ "$found" = false ]; then
-        echo "Error: Original line not found in '$file_path': '$original'"
+        echo "Error: Original line not found in '$file_path': '$original'" >&2
         rm -f "$temp_file"
         exit 1
     fi
@@ -172,7 +172,7 @@ reverse_patch() {
             if [ "$in_replacement" = true ]; then
                 replacement_lines+=("${line:1}")  # Remove the + prefix
             else
-                echo "Error: Found + line without preceding - line"
+                echo "Error: Found + line without preceding - line" >&2
                 exit 1
             fi
         fi
@@ -192,7 +192,7 @@ reverse_file() {
     local replacements=("$@")
     
     if [ ! -f "$file_path" ]; then
-        echo "Error: Target file '$file_path' not found"
+        echo "Error: Target file '$file_path' not found" >&2
         exit 1
     fi
     
@@ -217,7 +217,7 @@ reverse_file() {
                     echo "$original" >> "$temp_file"
                 else
                     # This shouldn't happen if we're tracking correctly
-                    echo "Error: Unexpected replacement line found"
+                    echo "Error: Unexpected replacement line found" >&2
                     rm -f "$temp_file"
                     exit 1
                 fi
@@ -235,7 +235,7 @@ reverse_file() {
     done < "$file_path"
     
     if [ "$found" = false ]; then
-        echo "Error: Replacement lines not found in '$file_path'"
+        echo "Error: Replacement lines not found in '$file_path'" >&2
         rm -f "$temp_file"
         exit 1
     fi
@@ -297,7 +297,7 @@ check_patch() {
             if [ "$in_replacement" = true ]; then
                 replacement_lines+=("${line:1}")  # Remove the + prefix
             else
-                echo "Error: Found + line without preceding - line"
+                echo "Error: Found + line without preceding - line" >&2
                 exit 1
             fi
         fi
@@ -360,7 +360,7 @@ check_file() {
             exit 1
         else
             # Neither found, file might be in unexpected state
-            echo "Warning: Neither original nor replacement lines found in '$file_path'"
+            echo "Warning: Neither original nor replacement lines found in '$file_path'" >&2
             exit 1
         fi
     )
@@ -378,7 +378,7 @@ case "$MODE" in
         check_patch
         ;;
     *)
-        echo "Error: Invalid mode '$MODE'. Use 'apply', 'reverse', or 'check'"
+        echo "Error: Invalid mode '$MODE'. Use 'apply', 'reverse', or 'check'" >&2
         exit 1
         ;;
 esac

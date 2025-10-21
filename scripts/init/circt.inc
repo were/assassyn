@@ -1,7 +1,7 @@
 # CIRCT installation targets
 # Simplified logic: skip if installed, always build from source, install from wheel if available
 
-.PHONY: install-circt clean-circt patch-circt build-pycde-source verify-pycde-installation
+.PHONY: install-circt clean-circt patch-circt build-pycde-source verify-pycde-installation check-wheel-exists install-pycde-wheel
 
 # Patch target for circt
 patch-circt: 3rd-party/circt/.patch-applied
@@ -34,6 +34,18 @@ verify-pycde-installation:
 	@$(VENV_DIR)/bin/python -c "import pycde; print('PyCDE version:', getattr(pycde, '__version__', 'unknown'))"
 	@echo "CIRCT installation completed successfully."
 
+# Check if wheel exists
+check-wheel-exists:
+	@if [ ! -d "3rd-party/circt/frontends/PyCDE/dist" ] || [ -z "$$(ls 3rd-party/circt/frontends/PyCDE/dist/*.whl 2>/dev/null)" ]; then \
+		echo "No wheel found, building PyCDE from source..."; \
+		$(MAKE) build-pycde-source; \
+	fi
+
+# Install PyCDE from wheel
+install-pycde-wheel:
+	@echo "Installing PyCDE from wheel..."
+	@$(VENV_DIR)/bin/pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl
+
 # Marker file to track build completion
 3rd-party/circt/.circt-built: patch-circt
 	@echo "Installing PyCDE..."
@@ -42,14 +54,8 @@ verify-pycde-installation:
 		echo "PyCDE is already installed — skipping installation."; \
 		touch $(CURDIR)/3rd-party/circt/.circt-built; \
 	else \
-		# Build from source if no wheel exists
-		if [ ! -f "3rd-party/circt/frontends/PyCDE/dist/"*.whl ]; then \
-			echo "No wheel found, building PyCDE from source..."; \
-			$(MAKE) build-pycde-source; \
-		fi
-		# Install from wheel
-		echo "Installing PyCDE from wheel..."; \
-		$(VENV_DIR)/bin/pip install 3rd-party/circt/frontends/PyCDE/dist/*.whl && \
+		$(MAKE) check-wheel-exists && \
+		$(MAKE) install-pycde-wheel && \
 		$(MAKE) verify-pycde-installation && \
 		touch $(CURDIR)/3rd-party/circt/.circt-built; \
 	fi

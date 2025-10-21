@@ -51,7 +51,8 @@ ZSHEOF
     echo "=== Testing builds ==="
     cd /app
     echo "Testing basic Python import..."
-    python -c 'import sys; print(f"Python {sys.version}")'
+    /app/.assassyn-venv/bin/python -c 'import sys; print(f"Python {sys.version}")'
+    /app/.assassyn-venv/bin/python -c 'import pycde'
     echo "Testing Verilator installation..."
     if [ -x "/app/3rd-party/verilator/bin/verilator" ]; then
         /app/3rd-party/verilator/bin/verilator --version

@@ -49,7 +49,7 @@ The base class for all expression nodes in the IR. It serves as the foundation f
 - `is_unary()` - Check if the opcode is a unary operator  
 - `is_valued()` - Check if this operation has a return value
 
-Internally, the constructor normalizes operands through `_prepare_operand`. Direct references to `Array`, `Port`, or `Wire` objects are registered with the operand's `users` list. Expression operands must originate from the same module unless `_is_cross_module_allowed()` explicitly approves the reference. Today the only cross-module exceptions are `PureIntrinsic` nodes for external output reads and `ExternalIntrinsic` handles, which let external SystemVerilog modules share outputs without relaxing other invariants.
+Internally, the constructor normalizes operands through `_prepare_operand`. Direct references to `Array` or `Port` objects are registered with the operand's `users` list. Expression operands must originate from the same module unless `_is_cross_module_allowed()` explicitly approves the reference. Today the only cross-module exceptions are `PureIntrinsic` nodes for external output reads and `ExternalIntrinsic` handles, which let external SystemVerilog modules share outputs without relaxing other invariants.
 
 #### `class Operand`
 
@@ -200,16 +200,16 @@ if isinstance(operand, Expr):
     return wrapped                    # Return wrapper for forward edge
 ```
 
-**For Array/Port/Wire Operands:**
+**For Array/Port Operands:**
 ```python
-if isinstance(operand, (Array, Port, Wire)):
+if isinstance(operand, (Array, Port)):
     operand.users.append(self)        # Direct backward edge
     return operand                     # No wrapper needed
 ```
 
 **Key Points:**
 - Expression operands are wrapped in `Operand` objects to establish bidirectional links
-- Array, Port, and Wire operands are stored directly but still register backward edges
+- Array and Port operands are stored directly but still register backward edges
 - The `operand.users.append(wrapped)` call is what establishes the backward edge
 - Different operand types have slightly different handling based on their nature
 - This automatic construction happens during IR creation, not in separate analysis passes

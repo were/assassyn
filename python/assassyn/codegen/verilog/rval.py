@@ -1,6 +1,6 @@
 """Rvalue dumping utilities for Verilog code generation."""
 
-from ...ir.module import Module, Port, Wire
+from ...ir.module import Module, Port
 from ...ir.const import Const
 from ...ir.array import Array
 from ...ir.dtype import RecordValue
@@ -57,7 +57,6 @@ _RVAL_DUMP_DISPATCH = {
     Const: _dump_const,
     str: _dump_str,
     RecordValue: _dump_record_value,
-    Wire: lambda _dumper, node, _with_namespace, _module_name=None: namify(node.name),
 }
 
 

@@ -15,7 +15,6 @@ from typing import Dict, Iterable, List, Optional
 
 from ...ir.dtype import DType
 from ...ir.module.external import ExternalSV
-from ...ir.module.module import Wire
 from ...utils import namify, repo_path
 from .utils import camelize
 
@@ -75,11 +74,12 @@ def _storage_width(bits: int) -> int:
     )
 
 
-def _dtype_to_port(name: str, wire: Wire) -> FFIPort:
-    dtype = wire.dtype
+def _dtype_to_port(name: str, wire_spec) -> FFIPort:
+    """Convert a WireSpec to FFIPort for FFI generation."""
+    dtype = wire_spec.dtype
     bits = getattr(dtype, "bits", None)
     if bits is None:
-        raise ValueError(f"Wire '{name}' lacks a bit-width definition")
+        raise ValueError(f"Port '{name}' lacks a bit-width definition")
     storage_bits = _storage_width(bits)
     signed = dtype.is_signed()
     if signed:
@@ -90,7 +90,7 @@ def _dtype_to_port(name: str, wire: Wire) -> FFIPort:
         rust_type = _RUST_INT_TYPES_UNSIGNED[storage_bits]
     return FFIPort(
         name=namify(name),
-        direction=wire.direction or "input",
+        direction=wire_spec.direction,
         dtype=dtype,
         bits=bits,
         signed=signed,

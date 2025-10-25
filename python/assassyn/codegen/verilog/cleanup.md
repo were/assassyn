@@ -41,7 +41,7 @@ This is the main cleanup function that generates all the necessary control signa
 7. **External Exposure Generation**: For every expression that must leave the module:
    - Appends `expose_<name>`/`valid_<name>` port declarations to `dumper.exposed_ports_to_add`.
    - Emits assignments that drive the value and its validity.
-   - Skips raw `Wire` objects, because those are bridged through dedicated external wiring handled elsewhere.
+   - Skips raw objects that are bridged through dedicated external wiring handled elsewhere.
    - Emits additional `expose_<instance>_<port>` / `valid_<instance>_<port>` pairs for every external register output that is consumed by another module, using the cross-module metadata recorded earlier in the pipeline.
 
 8. **Bookkeeping**: Records `self.executed = executed_wire` as the last assignment, ensuring downstream consumers and the top-level harness can observe the execution result.

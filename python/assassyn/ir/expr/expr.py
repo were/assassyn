@@ -12,7 +12,7 @@ from ...utils import namify, identifierize
 
 if typing.TYPE_CHECKING:
     from ..array import Array
-    from ..module import Port, Module, Wire
+    from ..module import Port, Module
     from ..dtype import DType
     from ..block import Block, CondBlock
 
@@ -67,12 +67,12 @@ class Expr(Value):
         #pylint: disable=import-outside-toplevel
         from ..array import Array
         from ..const import Const
-        from ..module import Port, Wire, Module
+        from ..module import Port, Module
         from ..dtype import RecordValue
         from ...builder import Singleton
         from ..module.downstream import Downstream
 
-        if isinstance(operand, (Array, Port, Wire)):
+        if isinstance(operand, (Array, Port)):
             operand.users.append(self)
             return operand
 

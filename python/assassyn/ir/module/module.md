@@ -2,7 +2,7 @@
 
 ## Summary
 
-This module provides the core Abstract Syntax Tree (AST) implementations for hardware modules, ports, and connection wires in Assassyn's credit-based pipeline architecture. The `Module` class represents the primary pipeline stage (note: this is a legacy naming issue - modules are actually pipeline stages in the current architecture), while `Port` and `Wire` classes handle communication interfaces as described in the [module design](../../../docs/design/internal/module.md) and [pipeline design](../../../docs/design/internal/pipeline.md).
+This module provides the core Abstract Syntax Tree (AST) implementations for hardware modules and ports in Assassyn's credit-based pipeline architecture. The `Module` class represents the primary pipeline stage (note: this is a legacy naming issue - modules are actually pipeline stages in the current architecture), while the `Port` class handles communication interfaces as described in the [module design](../../../docs/design/internal/module.md) and [pipeline design](../../../docs/design/internal/pipeline.md).
 
 ## Exposed Interfaces
 
@@ -49,18 +49,6 @@ class Port:
     @ir_builder
     def push(self, v): ...
     def __repr__(self): ...
-    def as_operand(self): ...
-```
-
-### Wire Class
-
-```python
-class Wire:
-    def __init__(self, dtype, direction=None, module=None, kind: str = 'wire'): ...
-    @property
-    def users(self): ...
-    def __repr__(self): ...
-    def assign(self, value): ...
     def as_operand(self): ...
 ```
 
@@ -215,44 +203,6 @@ Frontend API for consuming data from the port's FIFO. Returns a `FIFOPop` expres
 
 **Explanation:**
 Frontend API for pushing data into the port's FIFO. Returns a `FIFOPush` expression that adds the value to the FIFO.
-
-### Wire Class
-
-The `Wire` class represents simple connection points, often used for external module interfaces.
-
-**Purpose:** Provides direct wire connections for external modules and simple signal routing. Wires can represent pure combinational connections (`kind='wire'`) or registered outputs (`kind='reg'`), mirroring the metadata carried by `ExternalSV` modules.
-
-**Member Fields:**
-- `dtype: DType | None` - The data type of the wire (optional for undeclared wires)
-- `direction: str | None` - The wire direction ('input', 'output', or None)
-- `value: Value | None` - The assigned value for input wires
-- `_users: list` - List of expressions that use this wire
-- `name: str | None` - The wire's name
-- `module: Module | None` - The owning module
-- `parent: Module | None` - Backward compatibility alias for module
-- `kind: str` - Storage hint (`'wire'` or `'reg'`)
-
-**Methods:**
-
-#### `__init__(self, dtype, direction=None, module=None, kind='wire')`
-
-**Explanation:**
-Initializes a wire with the specified data type and optional direction/module metadata. The constructor validates the dtype when provided, records the owning module (setting both `module` and `parent` for legacy consumers), captures the requested storage `kind`, and initialises the cached value to `None`.
-
-#### `assign(self, value)`
-
-**Explanation:**
-Assigns a value to the wire. The method validates that the wire is not an output wire (output wires are driven by the external implementation) and stores the value for later code generation. This method is used for input wires in external module interfaces.
-
-#### `__repr__(self)`
-
-**Explanation:**
-Returns a string representation of the wire, including the dtype, direction, and (when different from the default) the storage kind.
-
-#### `as_operand(self)`
-
-**Explanation:**
-Returns a string suitable for use on the right-hand side of expressions. If the wire knows its owning module and name, it returns `<module>.<name>`; otherwise it falls back to the raw name or a generated identifier while preserving direction hints.
 
 ### Combinational Decorator
 

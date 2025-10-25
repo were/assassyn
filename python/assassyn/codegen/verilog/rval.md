@@ -113,7 +113,7 @@ The module uses a dispatch table `_RVAL_DUMP_DISPATCH` that maps node types to t
 - **Const**: Uses `_dump_const` for constant values
 - **str**: Uses `_dump_str` for string literals
 - **RecordValue**: Uses `_dump_record_value` for record values
-- **Wire**: Returns the wire name using `namify()`
+- **Port**: Returns the port name using `namify()`
 
 **Project-specific Knowledge Required**:
 - Understanding of [name generation utilities](/python/assassyn/utils.md)

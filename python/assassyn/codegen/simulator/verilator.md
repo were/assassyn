@@ -80,7 +80,7 @@ Creates an `ExternalFFIModule` spec from an `ExternalSV` **class** (rather than 
 
 **`_collect_ports_from_class`**: Translates the class's `port_specs()` dictionary into `FFIPort` instances. Similar to `_collect_ports` but operates on the class-level port specifications.
 
-**`_dtype_to_port`**: Converts a single port (Wire or WireSpec) to an `FFIPort` instance. Widths must be ≤ 64 bits—larger ports raise `NotImplementedError`. Signedness automatically selects the appropriate C and Rust scalar types. Note that WireSpec uses `'in'`/`'out'` for direction, not `'input'`/`'output'`.
+**`_dtype_to_port`**: Converts a single port (WireSpec) to an `FFIPort` instance. Widths must be ≤ 64 bits—larger ports raise `NotImplementedError`. Signedness automatically selects the appropriate C and Rust scalar types. Note that WireSpec uses `'in'`/`'out'` for direction, not `'input'`/`'output'`.
 
 ### `_generate_cargo_toml`, `_generate_lib_rs`, `_generate_wrapper_cpp`
 

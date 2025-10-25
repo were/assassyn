@@ -6,7 +6,7 @@ from .utils import (
     get_sram_info,
 )
 
-from ...ir.module import Downstream, Module, Port, Wire
+from ...ir.module import Downstream, Module, Port
 from ...ir.memory.sram import SRAM
 from ...ir.array import Array, Slice
 from ...ir.const import Const
@@ -300,9 +300,6 @@ def cleanup_post_generation(dumper):
                 dtype_str = f"Bits({actual_bits})"
 
 
-            # Special handling for Wire objects - they don't need exposed ports
-            if isinstance(key, Wire):
-                continue
             # Add port declaration strings to our list
             dumper.exposed_ports_to_add.append(f'expose_{exposed_name} = Output({dtype_str})')
             dumper.exposed_ports_to_add.append(f'valid_{exposed_name} = Output(Bits(1))')

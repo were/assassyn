@@ -34,7 +34,6 @@ The class for intrinsic operations with side effects. These operations may have 
 - `WAIT_UNTIL = 900` - Wait until a condition becomes true
 - `FINISH = 901` - Terminate simulation
 - `ASSERT = 902` - Assert a condition (renamed to `assume` to avoid Python keyword conflict)
-- `BARRIER = 903` - Create a barrier in the execution flow
 - `SEND_READ_REQUEST = 906` - Send a read request to memory
 - `SEND_WRITE_REQUEST = 908` - Send a write request to memory
 - `EXTERNAL_INSTANTIATE = 913` - Instantiate and drive an external module (created implicitly by `ExternalSV` calls)
@@ -108,19 +107,6 @@ Finish the simulation.
 
 **Explanation:**
 This intrinsic terminates the simulation when executed. It's commonly used to stop simulation after a certain number of cycles or when a specific condition is met.
-
-#### `def barrier(node) -> Intrinsic`
-
-Barrier the current simulation state.
-
-**Parameters:**
-- `node: Value` - The node to use as barrier
-
-**Returns:**
-- `Intrinsic` - The barrier intrinsic node
-
-**Explanation:**
-This intrinsic creates a barrier in the execution flow, ensuring that all previous operations complete before proceeding. It's used for synchronization in complex designs.
 
 #### `def has_mem_resp(memory) -> PureIntrinsic`
 

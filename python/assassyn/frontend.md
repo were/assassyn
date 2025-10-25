@@ -39,7 +39,6 @@ This module primarily serves as a re-export interface, making core Assassyn comp
 - `finish`: Finish/termination expression
 - `wait_until`: Wait condition expression
 - `assume`: Assumption expression for verification
-- `barrier`: Synchronization barrier expression
 - `send_read_request`: Memory read request expression
 - `send_write_request`: Memory write request expression
 - `has_mem_resp`: Memory response check expression that pairs with the simulator's DRAM callback bookkeeping

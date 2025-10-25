@@ -93,7 +93,7 @@ Generates Rust code for side-effecting intrinsic operations that control executi
 - `str` - Generated Rust code string, or `None` if intrinsic is not supported
 
 **Explanation:**
-This function dispatches to the appropriate code generation function based on the intrinsic's opcode. Side-effecting intrinsics include execution control (`wait_until`, `finish`, `assert`), memory operations (`send_read_request`, `send_write_request`), synchronization primitives (`barrier`), and the new `external_instantiate` opcode that routes inputs into the dynamically generated FFI handle. The generated code may modify simulator state or control execution flow. If an opcode is not implemented the dispatcher returns `None`, signalling the caller to handle or report the unsupported intrinsic.
+This function dispatches to the appropriate code generation function based on the intrinsic's opcode. Side-effecting intrinsics include execution control (`wait_until`, `finish`, `assert`), memory operations (`send_read_request`, `send_write_request`), and the new `external_instantiate` opcode that routes inputs into the dynamically generated FFI handle. The generated code may modify simulator state or control execution flow. If an opcode is not implemented the dispatcher returns `None`, signalling the caller to handle or report the unsupported intrinsic.
 
 ---
 
@@ -124,7 +124,6 @@ _INTRINSIC_DISPATCH = {
     Intrinsic.WAIT_UNTIL: _codegen_wait_until,
     Intrinsic.FINISH: _codegen_finish,
     Intrinsic.ASSERT: _codegen_assert,
-    Intrinsic.BARRIER: _codegen_barrier,
     Intrinsic.SEND_READ_REQUEST: _codegen_send_read_request,
     Intrinsic.SEND_WRITE_REQUEST: _codegen_send_write_request,
     Intrinsic.EXTERNAL_INSTANTIATE: _codegen_external_instantiate,
@@ -255,18 +254,6 @@ def _codegen_assert(node, module_ctx, **_kwargs) -> str
 Generates code to assert a runtime condition.
 
 **Generated Code:** `assert!(<condition>);`
-
-#### `_codegen_barrier`
-
-```python
-def _codegen_barrier(node, module_ctx, **_kwargs) -> str
-```
-
-Generates a no-op barrier operation.
-
-**Generated Code:** `/* Barrier */`
-
-### Memory Request Operations
 
 #### `_codegen_send_read_request`
 

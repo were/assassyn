@@ -290,8 +290,6 @@ def codegen_intrinsic(dumper, expr: Intrinsic) -> Optional[str]:
         final_cond = cond
         dumper.wait_until = final_cond
         return None
-    if intrinsic == Intrinsic.BARRIER:
-        return None
     if intrinsic == Intrinsic.EXTERNAL_INSTANTIATE:
         # Should be handled by ExternalIntrinsic check above
         raise RuntimeError("EXTERNAL_INSTANTIATE should be handled by ExternalIntrinsic")

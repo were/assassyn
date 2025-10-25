@@ -120,11 +120,6 @@ def _codegen_assert(node, module_ctx):
     return f"assert!({value});"
 
 
-def _codegen_barrier(node, module_ctx):
-    """Generate code for BARRIER intrinsic."""
-    return "/* Barrier */"
-
-
 def _codegen_send_read_request(node, module_ctx):
     """Generate code for SEND_READ_REQUEST intrinsic."""
     dram_module = node.args[0]
@@ -219,7 +214,6 @@ _INTRINSIC_DISPATCH = {
     Intrinsic.WAIT_UNTIL: _codegen_wait_until,
     Intrinsic.FINISH: _codegen_finish,
     Intrinsic.ASSERT: _codegen_assert,
-    Intrinsic.BARRIER: _codegen_barrier,
     Intrinsic.SEND_READ_REQUEST: _codegen_send_read_request,
     Intrinsic.SEND_WRITE_REQUEST: _codegen_send_write_request,
     Intrinsic.EXTERNAL_INSTANTIATE: _codegen_external_instantiate,

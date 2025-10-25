@@ -9,7 +9,6 @@ INTRIN_INFO = {
     900: ('wait_until', 1, False, True),
     901: ('finish', 0, False, True),
     902: ('assert', 1, False, True),
-    903: ('barrier', 1, False, True),
     906: ('send_read_request', 3, True, True),
     908: ('send_write_request', 4, True, True),
     913: ('external_instantiate', None, True, True),  # None = variable args
@@ -28,7 +27,6 @@ class Intrinsic(Expr):
     WAIT_UNTIL = 900
     FINISH = 901
     ASSERT = 902
-    BARRIER = 903
     SEND_READ_REQUEST = 906
     SEND_WRITE_REQUEST = 908
     EXTERNAL_INSTANTIATE = 913
@@ -96,11 +94,6 @@ def is_wait_until(expr):
 def finish():
     '''Finish the simulation.'''
     return Intrinsic(Intrinsic.FINISH)
-
-@ir_builder
-def barrier(node):
-    '''Barrier the current simulation state.'''
-    return Intrinsic(Intrinsic.BARRIER, node)
 
 @ir_builder
 def has_mem_resp(memory):

@@ -494,10 +494,7 @@ def generate_top_harness(dumper):
                 finish_signals.append(f'inst_{mod_name}.finish')
 
     if finish_signals:
-        if len(finish_signals) == 1:
-            dumper.append_code(f'self.global_finish = {finish_signals[0]}')
-        else:
-            dumper.append_code(f'self.global_finish = reduce(or_, [{", ".join(finish_signals)}])')
+        dumper.append_code(f'self.global_finish = reduce(or_, [{", ".join(finish_signals)}])')
     else:
         dumper.append_code('self.global_finish = Bits(1)(0)')
 
@@ -530,10 +527,7 @@ def generate_top_harness(dumper):
                 f"inst_{namify(c.name)}.{mod_name}_trigger"
                 for c in callers_of_this_module
             ]
-            if len(trigger_terms) > 1:
-                summed_triggers = f"reduce(add, [{', '.join(trigger_terms)}])"
-            else:
-                summed_triggers = trigger_terms[0]
+            summed_triggers = f"reduce(add, [{', '.join(trigger_terms)}])"
 
             dumper.append_code(
                 f"{mod_name}_trigger_counter_delta.assign({summed_triggers}.as_bits(8))"

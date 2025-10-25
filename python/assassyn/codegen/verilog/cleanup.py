@@ -103,12 +103,9 @@ def cleanup_post_generation(dumper):
         if dumper.current_module in dumper.downstream_dependencies:
             dep_signals = [f'self.{namify(dep.name)}_executed'
                 for dep in dumper.downstream_dependencies[node]]
-            if dep_signals:
-                dumper.append_code(
-                    f"executed_wire = reduce(or_, [{', '.join(dep_signals)}], Bits(1)(0))"
-                )
-            else:
-                dumper.append_code('executed_wire = Bits(1)(0)')
+            dumper.append_code(
+                f"executed_wire = reduce(or_, [{', '.join(dep_signals)}], Bits(1)(0))"
+            )
         else:
             dumper.append_code('executed_wire = Bits(1)(0)')
     else:
@@ -126,10 +123,7 @@ def cleanup_post_generation(dumper):
         for pred, exec_signal in dumper.finish_conditions:
             finish_terms.append(f"({pred} & {exec_signal})")
 
-        if len(finish_terms) == 1:
-            dumper.append_code(f'self.finish = {finish_terms[0]}')
-        else:
-            dumper.append_code(f'self.finish = reduce(or_, [{", ".join(finish_terms)}])')
+        dumper.append_code(f'self.finish = reduce(or_, [{", ".join(finish_terms)}])')
     else:
         dumper.append_code('self.finish = Bits(1)(0)')
 
@@ -252,12 +246,9 @@ def cleanup_post_generation(dumper):
                 dumper.append_code(f'# {pop_expr}')
                 pop_predicates = [pred for expr, pred in exposes if isinstance(expr, FIFOPop)]
 
-                if pop_predicates:
-                    final_pop_condition = (
-                        f"reduce(or_, [{', '.join([f'({p})' for p in pop_predicates])}])"
-                    )
-                else:
-                    final_pop_condition = "Bits(1)(0)"
+                final_pop_condition = (
+                    f"reduce(or_, [{', '.join([f'({p})' for p in pop_predicates])}], Bits(1)(0))"
+                )
                 dumper.append_code(
                     f"self.{fifo}_pop_ready = executed_wire & ({final_pop_condition})"
                 )
@@ -275,10 +266,7 @@ def cleanup_post_generation(dumper):
 
             add_terms = [f"Mux({pred}, UInt(8)(0), UInt(8)(1))" for pred in call_predicates]
 
-            if len(add_terms) == 1:
-                sum_expression = add_terms[0]
-            else:
-                sum_expression = f"reduce(add, [{', '.join(add_terms)}])"
+            sum_expression = f"reduce(add, [{', '.join(add_terms)}])"
 
             resized_sum = f"(({sum_expression}).as_bits()[0:8].as_uint())"
 
@@ -325,12 +313,7 @@ def cleanup_post_generation(dumper):
             # Include the condition predicate for the valid signal
             # OR all the predicates together when the same expression is exposed multiple times
             all_predicates = [pred for _, pred in exposes]
-            if len(all_predicates) == 1:
-                pred_condition = all_predicates[0]
-            elif len(all_predicates) > 1:
-                pred_condition = f"reduce(or_, [{', '.join([f'({p})' for p in all_predicates])}])"
-            else:
-                pred_condition = "Bits(1)(1)"
+            pred_condition = f"reduce(or_, [{', '.join([f'({p})' for p in all_predicates])}])"
             dumper.append_code(f'self.valid_{exposed_name} = executed_wire & ({pred_condition})')
 
     external_exposures = dumper.external_output_exposures.get(dumper.current_module, {})

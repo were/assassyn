@@ -106,6 +106,8 @@ from pycde.constructs import Reg, Array, Mux,Wire
 from pycde.types import Bits, SInt, UInt
 from pycde.signals import Struct, BitsSignal
 from pycde.dialects import comb,sv
+from functools import reduce
+from operator import or_, and_, add
 
 @modparams
 def FIFO(WIDTH: int, DEPTH_LOG2: int):

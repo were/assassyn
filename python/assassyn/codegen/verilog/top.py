@@ -497,7 +497,7 @@ def generate_top_harness(dumper):
         if len(finish_signals) == 1:
             dumper.append_code(f'self.global_finish = {finish_signals[0]}')
         else:
-            dumper.append_code(f'self.global_finish = {" | ".join(finish_signals)}')
+            dumper.append_code(f'self.global_finish = reduce(or_, [{", ".join(finish_signals)}])')
     else:
         dumper.append_code('self.global_finish = Bits(1)(0)')
 
@@ -531,7 +531,7 @@ def generate_top_harness(dumper):
                 for c in callers_of_this_module
             ]
             if len(trigger_terms) > 1:
-                summed_triggers = f"({' + '.join(trigger_terms)})"
+                summed_triggers = f"reduce(add, [{', '.join(trigger_terms)}])"
             else:
                 summed_triggers = trigger_terms[0]
 

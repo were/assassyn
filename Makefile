@@ -28,7 +28,7 @@ patch-all: patch-ramulator2 patch-circt patch-verilator
 build-all: install-py-package build-verilator build-ramulator2 build-wrapper install-circt
 
 # Test all components
-test-all: build-all
+test-all:
 	@echo "Running all tests..."
 	@pytest -n 8 python/unit-tests
 	@pytest -n 8 python/ci-tests

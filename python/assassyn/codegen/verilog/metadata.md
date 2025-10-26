@@ -23,18 +23,25 @@ This dataclass holds information about a module that is discovered during the co
 **Fields:**
 
 - `has_finish: bool = False` - Indicates whether the module contains a FINISH intrinsic. This is set to `True` when `codegen_intrinsic` encounters a FINISH operation, allowing top-level generation to determine which modules need their finish signals collected without walking the module body again.
+- `pushes: List[FIFOPush]` - List of FIFOPush expressions found in this module. This list is populated by `codegen_fifo_push` when processing FIFO push operations during expression generation, avoiding redundant expression walking during top-level harness generation.
+- `calls: List[AsyncCall]` - List of AsyncCall expressions found in this module. This list is populated by `codegen_async_call` when processing async call operations during expression generation, avoiding redundant expression walking during module port generation and top-level harness generation.
 
 **When Metadata is Populated:**
 
 1. **Initialization**: An empty `PostDesignGeneration` instance is created for each module at the start of `visit_module` in [design.py](/python/assassyn/codegen/verilog/design.md)
-2. **Population**: The `has_finish` flag is set to `True` in [intrinsics.py](/python/assassyn/codegen/verilog/_expr/intrinsics.md) when a FINISH intrinsic is encountered during expression code generation
+2. **Population**: Metadata fields are populated during expression generation:
+   - The `has_finish` flag is set to `True` in [intrinsics.py](/python/assassyn/codegen/verilog/_expr/intrinsics.md) when a FINISH intrinsic is encountered
+   - The `pushes` list is populated in [array.py](/python/assassyn/codegen/verilog/_expr/array.md) when processing FIFOPush operations
+   - The `calls` list is populated in [call.py](/python/assassyn/codegen/verilog/_expr/call.md) when processing AsyncCall operations
 
 **How Metadata is Consumed:**
 
-The metadata is stored in `CIRCTDumper.module_metadata`, a dictionary mapping `Module` objects to their `PostDesignGeneration` metadata. This metadata is primarily consumed in [top.py](/python/assassyn/codegen/verilog/top.md) during top-level harness generation:
+The metadata is stored in `CIRCTDumper.module_metadata`, a dictionary mapping `Module` objects to their `PostDesignGeneration` metadata. This metadata is consumed in multiple places:
 
-- **Global Finish Signal Collection**: Instead of walking all module expressions to detect FINISH intrinsics, `generate_top_harness` performs an O(1) lookup in `module_metadata` to check the `has_finish` flag
-- **Performance Benefit**: Eliminates redundant expression walking, converting an O(n) traversal into O(1) metadata lookup
+- **Top-level harness generation** ([top.py](/python/assassyn/codegen/verilog/top.md)): Uses `pushes` and `calls` lists to determine module interconnections without walking module bodies again
+- **Module port generation** ([design.py](/python/assassyn/codegen/verilog/design.md)): Uses `pushes` and `calls` lists during module generation to determine required ports
+- **Global finish signal collection**: Uses `has_finish` flag to determine which modules need finish signals collected
+- **Performance Benefit**: Eliminates redundant expression walking, converting O(n) traversals into O(1) metadata lookups
 
 **Future Extensions:**
 

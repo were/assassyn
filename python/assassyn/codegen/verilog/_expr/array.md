@@ -73,7 +73,8 @@ def codegen_fifo_push(dumper, expr: FIFOPush) -> Optional[str]:
 This function handles FIFO push operations by registering them with the module's expose mechanism. Similar to array writes, FIFO pushes don't generate immediate code but instead:
 
 1. **Expose Registration**: Calls `dumper.expose('fifo', expr)` to register the push operation
-2. **Deferred Processing**: The actual push logic is generated later during the cleanup phase
+2. **Metadata Collection**: Records the FIFOPush expression in the module's metadata (see [metadata module](/python/assassyn/codegen/verilog/metadata.md)) to avoid redundant expression walking
+3. **Deferred Processing**: The actual push logic is generated later during the cleanup phase
 
 The cleanup phase handles FIFO push operations by:
 - Combining multiple push predicates

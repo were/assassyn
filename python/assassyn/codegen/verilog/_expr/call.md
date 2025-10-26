@@ -21,6 +21,8 @@ where triggers for each callee are aggregated and translated into credit
 updates. This mirrors the behaviour described in
 [`arch.md`](../../../docs/design/arch/arch.md).
 
+Additionally, this function records the AsyncCall expression in the module's metadata (see [metadata module](/python/assassyn/codegen/verilog/metadata.md)) to avoid redundant expression walking during module port generation and top-level harness generation.
+
 ### `codegen_bind`
 
 ```python

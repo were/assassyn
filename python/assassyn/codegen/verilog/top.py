@@ -18,7 +18,6 @@ from ...ir.expr import (
     FIFOPop,
     AsyncCall,
     Bind,
-    Intrinsic,
 )
 from ...ir.expr.intrinsic import ExternalIntrinsic
 from ...ir.dtype import Record
@@ -483,15 +482,10 @@ def generate_top_harness(dumper):
     finish_signals = []
     for module in instantiation_modules:
         mod_name = namify(module.name)
-        # Check if this module type has finish conditions
-        if hasattr(module, 'body'):
-            # Check if module contains FINISH intrinsics
-            has_finish = any(
-                isinstance(expr, Intrinsic) and expr.opcode == Intrinsic.FINISH
-                for expr in dumper._walk_expressions(module.body)
-            )
-            if has_finish:
-                finish_signals.append(f'inst_{mod_name}.finish')
+        # Check if this module type has finish conditions using metadata
+        metadata = dumper.module_metadata.get(module)
+        if metadata and metadata.has_finish:
+            finish_signals.append(f'inst_{mod_name}.finish')
 
     if finish_signals:
         dumper.append_code(f'self.global_finish = reduce(or_, [{", ".join(finish_signals)}])')

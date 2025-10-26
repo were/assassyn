@@ -39,6 +39,7 @@ from .cleanup import cleanup_post_generation
 from .rval import dump_rval as dump_rval_impl
 from .module import generate_module_ports
 from .system import generate_system
+from .metadata import PostDesignGeneration
 
 
 class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-many-statements
@@ -99,6 +100,7 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         self.external_instance_owners = {}
         self.external_intrinsics = []
         self.external_classes = []
+        self.module_metadata: Dict[Module, PostDesignGeneration] = {}
 
     def get_pred(self) -> str:
         """Get the current predicate for conditional execution."""
@@ -266,6 +268,9 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         original_indent = self.indent
         self.code = []
         self.indent = original_indent + 8
+
+        # Initialize metadata for this module
+        self.module_metadata[node] = PostDesignGeneration()
 
         self.wait_until = None
         self._exposes = {}

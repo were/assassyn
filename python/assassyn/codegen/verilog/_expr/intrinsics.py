@@ -5,7 +5,7 @@ This module contains functions to generate Verilog code for intrinsic operations
 including PureIntrinsic, Intrinsic, and Log.
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from string import Formatter
 
 from ....ir.expr import Log
@@ -14,6 +14,9 @@ from ....ir.const import Const
 from ....ir.dtype import Int
 from ....ir.block import CondBlock, CycledBlock
 from ....utils import unwrap_operand, namify
+
+if TYPE_CHECKING:
+    from ..design import CIRCTDumper
 
 
 def codegen_log(dumper, expr: Log) -> Optional[str]:
@@ -281,6 +284,8 @@ def codegen_intrinsic(dumper, expr: Intrinsic) -> Optional[str]:
     if intrinsic == Intrinsic.FINISH:
         predicate_signal = dumper.get_pred()
         dumper.finish_conditions.append((predicate_signal, "executed_wire"))
+        # Track that this module has a finish intrinsic for top-level generation
+        dumper.module_metadata[dumper.current_module].has_finish = True
         return None
     if intrinsic == Intrinsic.ASSERT:
         dumper.expose('expr', expr.args[0])

@@ -12,7 +12,7 @@ The module port generation utilities handle the creation of comprehensive module
 
 ```python
 def generate_module_ports(dumper, node: Module, is_downstream: bool, is_sram: bool,
-                          is_driver: bool, pushes: List, calls: List) -> None:
+                          is_driver: bool, pushes: List, calls: List, pops: List) -> None:
     """Generate port declarations for a module.
 
     Args:
@@ -23,6 +23,7 @@ def generate_module_ports(dumper, node: Module, is_downstream: bool, is_sram: bo
         is_driver: Whether this module is a driver
         pushes: List of FIFOPush expressions
         calls: List of AsyncCall expressions
+        pops: List of FIFOPop expressions
     """
 ```
 
@@ -43,7 +44,7 @@ This function generates comprehensive port declarations for Verilog modules base
    - Direct externals (`node.externals`) still emit `<producer>_<value>` and `<producer>_<value>_valid` inputs for expressions that originate elsewhere (skipping bindings, constants, and the `ExternalIntrinsic` handles themselves).
 
 5. **FIFO Handshake Ports**:
-   - For pipeline modules, declares FIFO inputs (`port`, `port_valid`) and optional `port_pop_ready` outputs when the module pops from the FIFO.
+   - For pipeline modules, declares FIFO inputs (`port`, `port_valid`) and optional `port_pop_ready` outputs when the module pops from the FIFO, determined by `pops` metadata (`{p.fifo for p in pops}`).
    - Adds ready inputs for FIFO pushes and trigger counter deltas, skipping handshake ports when the producer/consumer is a pure external stub.
 
 6. **Output Handshakes**: Declares `<callee>_<fifo>_push_valid/data` outputs and `<callee>_trigger` outputs for each async call target, again skipping external-only callees so we do not generate unused ports.

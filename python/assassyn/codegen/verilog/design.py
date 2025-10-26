@@ -305,8 +305,9 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         metadata = self.module_metadata.get(node)
         pushes = metadata.pushes if metadata else []
         calls = metadata.calls if metadata else []
+        pops = metadata.pops if metadata else []
 
-        generate_module_ports(self, node, is_downstream, is_sram, is_driver, pushes, calls)
+        generate_module_ports(self, node, is_downstream, is_sram, is_driver, pushes, calls, pops)
 
         self.append_code('')
         self.append_code('@generator')

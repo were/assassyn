@@ -3,7 +3,7 @@
 from typing import List
 from .utils import dump_type, get_sram_info
 from ...ir.module import Module
-from ...ir.expr import FIFOPop, Bind
+from ...ir.expr import Bind
 from ...ir.expr.intrinsic import ExternalIntrinsic
 from ...ir.const import Const
 from ...utils import namify, unwrap_operand
@@ -12,7 +12,7 @@ from ...utils import namify, unwrap_operand
 # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 # pylint: disable=protected-access
 def generate_module_ports(dumper, node: Module, is_downstream: bool, is_sram: bool,
-                          is_driver: bool, pushes: List, calls: List) -> None:
+                          is_driver: bool, pushes: List, calls: List, pops: List) -> None:
     """Generate port declarations for a module.
 
     Args:
@@ -85,10 +85,8 @@ def generate_module_ports(dumper, node: Module, is_downstream: bool, is_sram: bo
             name = namify(i.name)
             dumper.append_code(f'{name} = Input({dump_type(i.dtype)})')
             dumper.append_code(f'{name}_valid = Input(Bits(1))')
-            has_pop = any(
-                isinstance(e, FIFOPop) and e.fifo == i
-                for e in dumper._walk_expressions(node.body)
-            )
+            popped_fifos = {p.fifo for p in pops}
+            has_pop = i in popped_fifos
             if has_pop:
                 dumper.append_code(f'{name}_pop_ready = Output(Bits(1))')
 

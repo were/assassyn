@@ -14,7 +14,6 @@ from ...analysis import topo_downstream_modules
 from ...ir.module import Downstream
 from ...ir.memory.sram import SRAM
 from ...ir.expr import (
-    FIFOPop,
     Bind,
 )
 from ...ir.expr.intrinsic import ExternalIntrinsic
@@ -434,9 +433,10 @@ def generate_top_harness(dumper):
             connection_lines.append(
                 f"{mod_name}_trigger_counter_pop_ready.assign(inst_{mod_name}.executed)"
             )
+            metadata = dumper.module_metadata.get(module)
+            popped_fifos = {p.fifo for p in (metadata.pops if metadata else [])}
             for port in module_ports:
-                if any(isinstance(e, FIFOPop) and e.fifo == port
-                       for e in dumper._walk_expressions(module.body)):
+                if port in popped_fifos:
                     connection_lines.append(
                         f"fifo_{mod_name}_{namify(port.name)}_pop_ready"
                         f".assign(inst_{mod_name}.{namify(port.name)}_pop_ready)"

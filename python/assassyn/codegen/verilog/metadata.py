@@ -9,12 +9,14 @@ from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ...ir.expr import FIFOPush, AsyncCall
+    from ...ir.expr import FIFOPush, AsyncCall, FIFOPop
     PushList = List[FIFOPush]
     CallList = List[AsyncCall]
+    PopList = List[FIFOPop]
 else:
     PushList = List[Any]
     CallList = List[Any]
+    PopList = List[Any]
 
 
 @dataclass
@@ -34,10 +36,13 @@ class PostDesignGeneration:
             expression generation to avoid redundant walking.
         calls: List of AsyncCall expressions found in this module. Collected during
             expression generation to avoid redundant walking.
+        pops: List of FIFOPop expressions found in this module. Collected during
+            expression generation to avoid redundant walking.
     """
     has_finish: bool = False
     pushes: PushList = field(default_factory=list)
     calls: CallList = field(default_factory=list)
+    pops: PopList = field(default_factory=list)
     # Future extensions:
     # has_wait_until: bool = False
     # array_usage: Optional[List[Array]] = None

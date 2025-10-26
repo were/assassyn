@@ -3,5 +3,5 @@ name: plan-accepted.md
 description: The given plan is accepted
 ---
 
-Act on this plan as per the @act-on-todo.mdc,
-and then stage and commit as per @git-message.mdc
+This plan is accepted! Read `.cursor/rules/act-on-todo.mdc` to act on the plan,
+and then stage and commit according to `.cursor/rules/git-message.mdc`.

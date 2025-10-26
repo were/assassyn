@@ -14,7 +14,6 @@ from ...analysis import topo_downstream_modules
 from ...ir.module import Downstream
 from ...ir.memory.sram import SRAM
 from ...ir.expr import (
-    FIFOPush,
     FIFOPop,
     Bind,
 )
@@ -185,20 +184,21 @@ def generate_top_harness(dumper):
         module_fifo_depths[mod] = \
             {port: default_fifo_depth for port in getattr(mod, 'ports', [])}
 
+    # Use metadata-driven pushes to compute FIFO depths, avoiding expression walking
     for module in dumper.sys.modules + dumper.sys.downstreams:
-        if not module.body:
+        metadata = dumper.module_metadata.get(module)
+        if not metadata:
             continue
-        for expr in dumper._walk_expressions(module.body):
-            if isinstance(expr, FIFOPush):
-                fifo_port = expr.fifo
-                owner = fifo_port.module
-                if owner not in module_fifo_depths:
-                    continue
-                depth = getattr(expr, 'fifo_depth', None)
-                if not isinstance(depth, int) or depth <= 0:
-                    depth = default_fifo_depth
-                current = module_fifo_depths[owner].get(fifo_port, default_fifo_depth)
-                module_fifo_depths[owner][fifo_port] = max(current, depth)
+        for push in getattr(metadata, 'pushes', []):
+            fifo_port = push.fifo
+            owner = fifo_port.module
+            if owner not in module_fifo_depths:
+                continue
+            depth = getattr(push, 'fifo_depth', None)
+            if not isinstance(depth, int) or depth <= 0:
+                depth = default_fifo_depth
+            current = module_fifo_depths[owner].get(fifo_port, default_fifo_depth)
+            module_fifo_depths[owner][fifo_port] = max(current, depth)
 
     for module in dumper.sys.modules:
         if dumper.is_stub_external(module):

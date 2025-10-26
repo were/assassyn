@@ -55,7 +55,7 @@ This function generates the complete top-level Verilog module that serves as the
    - **Array Wires**: Write enable, data, and address signals for multi-port arrays
 
 5. **Hardware Instantiations**: Instantiates all system components:
-   - **FIFO Instances**: Parameterized FIFOs with proper depth configuration
+   - **FIFO Instances**: Parameterized FIFOs with depth configuration derived from metadata
    - **Trigger Counter Instances**: Credit-based trigger counters for each module
    - **Array Instances**: Multi-port array modules with write port connections
 
@@ -72,6 +72,7 @@ This function generates the complete top-level Verilog module that serves as the
    - **Memory Connections**: SRAM interface signal routing
 
 8. **Global Finish Signal**: Collects finish signals from all modules using metadata-based detection (O(1) lookup via `module_metadata`), avoiding redundant expression walking, and creates global finish. See [metadata module](/python/assassyn/codegen/verilog/metadata.md) for implementation details.
+   Additionally, FIFO depth selection no longer walks expressions; it computes depths from the `pushes` recorded in `module_metadata` during expression generation.
 
 9. **Unused Port Tie-off**: Ties off unused FIFO push ports to prevent floating signals
 
@@ -84,7 +85,7 @@ This function generates the complete top-level Verilog module that serves as the
 The function handles complex system-wide relationships:
 
 - **Multi-Port Array Management**: Ensures proper write port assignment and connection
-- **FIFO Depth Configuration**: Analyzes FIFO usage to determine appropriate depths
+- **FIFO Depth Configuration**: Determines FIFO depths from `module_metadata.pushes` (no expression walking)
 - **External Module Integration**: Properly integrates external SystemVerilog modules
   by:
   - Declaring shared wires once per exposed external value (data + valid), using the normalised wire keys emitted by the intrinsic lowering pass
@@ -109,7 +110,7 @@ The function uses several utility functions and data structures:
 - `namify()` and `unwrap_operand()` from [utils module](/python/assassyn/utils.md) for name generation
 - `topo_downstream_modules()` from [analysis module](/python/assassyn/analysis/external_usage.md) for topological ordering
 - `get_external_port_name()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for external port naming
-- `_walk_expressions()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for expression traversal
+- `_walk_expressions()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for expression traversal (still used for certain checks, e.g., `FIFOPop` readiness), but not for FIFO depth selection
 - `_is_external_module()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for external module detection
 - `_connect_array()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for array connections
 

@@ -189,12 +189,12 @@ def generate_top_harness(dumper):
         metadata = dumper.module_metadata.get(module)
         if not metadata:
             continue
-        for push in getattr(metadata, 'pushes', []):
+        for push in metadata.pushes:
             fifo_port = push.fifo
             owner = fifo_port.module
             if owner not in module_fifo_depths:
                 continue
-            depth = getattr(push, 'fifo_depth', None)
+            depth = push.fifo_depth
             if not isinstance(depth, int) or depth <= 0:
                 depth = default_fifo_depth
             current = module_fifo_depths[owner].get(fifo_port, default_fifo_depth)

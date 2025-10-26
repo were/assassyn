@@ -95,7 +95,7 @@ This function generates Verilog code for block intrinsic operations, which are c
 
 1. **FINISH**: Signals that the module should finish execution
    - Adds the current predicate and execution signal to `finish_conditions`
-   - Sets the `has_finish` flag in the module's metadata (see [metadata module](/python/assassyn/codegen/verilog/metadata.md)) to avoid redundant expression walking during top-level generation
+   - Sets the `has_finish` flag in the module's metadata (see [metadata module](/python/assassyn/codegen/verilog/metadata.md)) for top-level generation
    - Used to implement early termination of module execution
    - The cleanup phase combines all finish conditions with OR logic
 

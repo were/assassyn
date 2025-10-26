@@ -6,10 +6,15 @@ harness generation).
 """
 
 from dataclasses import dataclass, field
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...ir.expr import FIFOPush, AsyncCall
+    PushList = List[FIFOPush]
+    CallList = List[AsyncCall]
+else:
+    PushList = List[Any]
+    CallList = List[Any]
 
 
 @dataclass
@@ -31,8 +36,8 @@ class PostDesignGeneration:
             expression generation to avoid redundant walking.
     """
     has_finish: bool = False
-    pushes: List['FIFOPush'] = field(default_factory=list)
-    calls: List['AsyncCall'] = field(default_factory=list)
+    pushes: PushList = field(default_factory=list)
+    calls: CallList = field(default_factory=list)
     # Future extensions:
     # has_wait_until: bool = False
     # array_usage: Optional[List[Array]] = None

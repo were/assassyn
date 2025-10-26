@@ -71,7 +71,7 @@ This function generates the complete top-level Verilog module that serves as the
    - **Array Connections**: Write signal routing to array instances
    - **Memory Connections**: SRAM interface signal routing
 
-8. **Global Finish Signal**: Collects finish signals from all modules and creates global finish
+8. **Global Finish Signal**: Collects finish signals from all modules using metadata-based detection (O(1) lookup via `module_metadata`), avoiding redundant expression walking, and creates global finish. See [metadata module](/python/assassyn/codegen/verilog/metadata.md) for implementation details.
 
 9. **Unused Port Tie-off**: Ties off unused FIFO push ports to prevent floating signals
 

@@ -16,7 +16,6 @@ from ...ir.memory.sram import SRAM
 from ...ir.expr import (
     FIFOPush,
     FIFOPop,
-    AsyncCall,
     Bind,
 )
 from ...ir.expr.intrinsic import ExternalIntrinsic
@@ -381,8 +380,10 @@ def generate_top_harness(dumper):
                             f"{arr_name}_rdata{port_suffix}=aw_{arr_name}_rdata{port_suffix}"
                         )
 
-        pushes = [e for e in dumper._walk_expressions(module.body) if isinstance(e, FIFOPush)]
-        calls = [e for e in dumper._walk_expressions(module.body) if isinstance(e, AsyncCall)]
+        # Use metadata instead of walking expressions again
+        metadata = dumper.module_metadata.get(module)
+        pushes = metadata.pushes if metadata else []
+        calls = metadata.calls if metadata else []
 
         for p in pushes:
             # Store the actual Port object that is the target of a push

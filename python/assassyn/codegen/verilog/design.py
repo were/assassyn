@@ -301,8 +301,10 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         self.append_code(f'class {namify(node.name)}(Module):')
         self.indent += 4
 
-        pushes = [e for e in self._walk_expressions(node.body) if isinstance(e, FIFOPush)]
-        calls = [e for e in self._walk_expressions(node.body) if isinstance(e, AsyncCall)]
+        # Use metadata instead of walking expressions
+        metadata = self.module_metadata.get(node)
+        pushes = metadata.pushes if metadata else []
+        calls = metadata.calls if metadata else []
 
         generate_module_ports(self, node, is_downstream, is_sram, is_driver, pushes, calls)
 

@@ -43,6 +43,9 @@ def codegen_array_write(dumper, expr: ArrayWrite) -> Optional[str]:
 def codegen_fifo_push(dumper, expr: FIFOPush) -> Optional[str]:
     """Generate code for FIFO push operations."""
     dumper.expose('fifo', expr)
+    # Track pushes in module metadata to avoid redundant expression walking
+    if dumper.current_module:
+        dumper.module_metadata[dumper.current_module].pushes.append(expr)
 
 
 def codegen_fifo_pop(dumper, expr: FIFOPop) -> Optional[str]:

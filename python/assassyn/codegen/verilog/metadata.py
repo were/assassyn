@@ -5,7 +5,11 @@ pass that needs to be referenced in later compilation phases (e.g., during top-l
 harness generation).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...ir.expr import FIFOPush, AsyncCall
 
 
 @dataclass
@@ -21,9 +25,14 @@ class PostDesignGeneration:
             set to True when codegen_intrinsic encounters a FINISH operation, allowing
             top-level generation to determine which modules need their finish signals
             collected without walking the module body again.
+        pushes: List of FIFOPush expressions found in this module. Collected during
+            expression generation to avoid redundant walking.
+        calls: List of AsyncCall expressions found in this module. Collected during
+            expression generation to avoid redundant walking.
     """
     has_finish: bool = False
+    pushes: List['FIFOPush'] = field(default_factory=list)
+    calls: List['AsyncCall'] = field(default_factory=list)
     # Future extensions:
     # has_wait_until: bool = False
-    # has_async_calls: bool = False
     # array_usage: Optional[List[Array]] = None

@@ -124,7 +124,7 @@ The module uses several utility functions:
 
 - `dump_rval()` from [rval module](/python/assassyn/codegen/verilog/rval.md) for generating signal references
 - `unwrap_operand()` and `namify()` from [utils module](/python/assassyn/utils.md) for operand processing and name generation
-- `get_pred()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for getting current execution predicate
+- `format_predicate()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) which consumes `expr.meta_cond` captured on each IR node to produce `Bits(1)` guards recorded alongside external exposures
 - `external_instance_names` / `external_wrapper_names` maps on the dumper to coordinate `ExternalIntrinsic` handling across passes
 
 The intrinsic expression generation is integrated into the main expression dispatch system through the [__init__.py](/python/assassyn/codegen/verilog/_expr/__init__.md) module, which routes different expression types to their appropriate code generation functions.

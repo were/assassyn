@@ -113,9 +113,10 @@ The CIRCTDumper class is the main visitor that converts Assassyn IR into Verilog
 2. **Module State**: `current_module` tracks traversal context, while port declarations are derived from immutable metadata instead of mutating dumper dictionaries.
 3. **Array Management**: `array_metadata`, `memory_defs`, and ownership metadata ensure multi-port register arrays are emitted while memory payloads (`array.is_payload(memory)` returning `True`) are routed through dedicated generators.
 4. **External Integration**: `external_metadata` (an `ExternalRegistry`) captures external classes, instance ownership, and cross-module reads. Runtime maps (`external_wrapper_names`, `external_instance_names`, `external_wire_assignments`, `external_wire_outputs`, and `external_output_exposures`) reuse that registry to materialise expose/valid ports and wire consumers to producers without recomputing analysis.
-5. **Expression Naming**: `expr_to_name` and `name_counters` guarantee deterministic signal names whenever expression results must be reused across statements.
-6. **Code Generation**: `code`, `logs`, and `indent` store emitted lines and diagnostic information used later by the testbench.
-7. **Module Metadata**: `module_metadata` maps each `Module` to its `ModuleMetadata`. The structure tracks FINISH intrinsics, async calls, FIFO interactions (annotated with `expr.meta_cond`), and every array/value exposure required for cleanup. These entries are populated before the dumper is constructed via [`collect_fifo_metadata`](./analysis.md), so `CIRCTDumper` receives a frozen snapshot and never mutates it during emission. See [metadata module](/python/assassyn/codegen/verilog/metadata.md) for details. The dumper exposes this information via convenience helpers such as `async_callers(module)`, which forwards to the frozen `AsyncLedger` stored on the interaction matrix.
+5. **Predicate Preservation**: `external_output_exposures` caches each external output’s `Expr.meta_cond` so cleanup and module emitters can feed it through `format_predicate()` without re-resolving predicate chains or losing guard information.
+6. **Expression Naming**: `expr_to_name` and `name_counters` guarantee deterministic signal names whenever expression results must be reused across statements.
+7. **Code Generation**: `code`, `logs`, and `indent` store emitted lines and diagnostic information used later by the testbench.
+8. **Module Metadata**: `module_metadata` maps each `Module` to its `ModuleMetadata`. The structure tracks FINISH intrinsics, async calls, FIFO interactions (annotated with `expr.meta_cond`), and every array/value exposure required for cleanup. These entries are populated before the dumper is constructed via [`collect_fifo_metadata`](./analysis.md), so `CIRCTDumper` receives a frozen snapshot and never mutates it during emission. See [metadata module](/python/assassyn/codegen/verilog/metadata.md) for details. The dumper exposes this information via convenience helpers such as `async_callers(module)`, which forwards to the frozen `AsyncLedger` stored on the interaction matrix.
 
 During the cleanup pass the dumper feeds the precomputed metadata into `_emit_predicate_mux_chain`, producing both the `reduce(or_, …)` guards and prioritised mux chains shared by array writes and FIFO pushes. The helper now short-circuits single-entry collections to direct assignments and relies on caller-supplied defaults when metadata yields no interactions, keeping the emitted Verilog stable if predicate formatting or default literals change in the future.
 
@@ -140,7 +141,7 @@ During the cleanup pass the dumper feeds the precomputed metadata into `_emit_pr
 
 **`visit_block`**: Visits conditional and cycled blocks, relying on the IR-level `meta_cond` metadata captured during construction to keep predicates aligned across code generation, metadata collection, and log emission.
 
-**`get_pred(expr)`**: Formats the predicate metadata attached to `expr`. The dumper consumes the final carry exposed via `expr.meta_cond`, and expressions that lack `meta_cond` now trigger an explicit error so refactors cannot silently drop predicate capture.
+**`format_predicate(predicate)`**: Normalises a predicate `Expr` (typically sourced from `expr.meta_cond`) into a `Bits(1)` Verilog expression. The helper accepts `None` and falls back to the canonical literal `Bits(1)(1)` so call sites can uniformly request formatting without open-coding default literals.
 
 **`get_external_port_name`**: Creates mangled port names for external values to avoid naming conflicts
 

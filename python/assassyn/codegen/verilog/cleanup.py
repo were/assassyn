@@ -395,7 +395,8 @@ def cleanup_post_generation(dumper):
         dumper.append_code(f'# External output exposure: {source_expr}')
         dumper.append_code(f'self.expose_{output_name} = {source_expr}')
         # Include the condition predicate for the valid signal if available
-        condition = data.get('condition', 'Bits(1)(1)')
+        predicate = data.get('meta_cond')
+        condition = dumper.format_predicate(predicate)
         dumper.append_code(f'self.valid_{output_name} = executed_wire & ({condition})')
 
     dumper.append_code('self.executed = executed_wire')

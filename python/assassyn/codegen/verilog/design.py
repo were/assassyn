@@ -81,10 +81,6 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         if not self.external_metadata.frozen:
             self.external_metadata.freeze()
 
-    def get_pred(self, expr: Expr) -> str:
-        """Format the predicate guarding *expr* (or return the default literal)."""
-        return self.format_predicate(expr.meta_cond)
-
     def format_predicate(self, predicate: Optional[Expr]) -> str:
         """Format a predicate value as a Bits expression."""
         if predicate is None:

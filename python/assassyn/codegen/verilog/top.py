@@ -239,9 +239,6 @@ def generate_top_harness(dumper: CIRCTDumper):
     module_connection_map = {}
     pending_connection_assignments = defaultdict(list)
     declared_cross_module_wires = set()
-    external_assignments_by_consumer = defaultdict(list)
-    for entry in dumper.external_wire_assignments:
-        external_assignments_by_consumer[entry['consumer']].append(entry)
 
     def _queue_cross_module_assignments(producer_module, assignments):
         target_lines = module_connection_map.get(producer_module)
@@ -256,25 +253,38 @@ def generate_top_harness(dumper: CIRCTDumper):
             declared_cross_module_wires.add(name)
 
     def _attach_consumer_external_entries(module, port_map):
-        consumer_external_entries = external_assignments_by_consumer.get(module, [])
         handled_consumer_ports = set()
-        for assignment in consumer_external_entries:
-            expr = assignment['expr']
+        queued_keys = set()
+        for entry in dumper.external_metadata.reads_for_consumer(module):
+            expr = entry.expr
             consumer_port = dumper.get_external_port_name(expr)
-            if consumer_port in handled_consumer_ports:
-                continue
-            handled_consumer_ports.add(consumer_port)
             dtype = dump_type(expr.dtype)
-            _declare_cross_module_wire(consumer_port, dtype)
-            valid_name = f"{consumer_port}_valid"
-            _declare_cross_module_wire(valid_name, "Bits(1)")
-            port_map.append(f"{consumer_port}={consumer_port}")
-            port_map.append(f"{valid_name}={valid_name}")
-            producer_module = assignment['producer']
-            producer_name = namify(producer_module.name)
-            producer_port = dumper.external_wire_outputs.get(assignment['wire'])
-            if producer_port is None:
+            if consumer_port not in handled_consumer_ports:
+                _declare_cross_module_wire(consumer_port, dtype)
+                valid_name = f"{consumer_port}_valid"
+                _declare_cross_module_wire(valid_name, "Bits(1)")
+                port_map.append(f"{consumer_port}={consumer_port}")
+                port_map.append(f"{valid_name}={valid_name}")
+                handled_consumer_ports.add(consumer_port)
+            else:
+                valid_name = f"{consumer_port}_valid"
+
+            wire_key = dumper.get_external_wire_key(
+                entry.instance,
+                entry.port_name,
+                entry.index_operand,
+            )
+            if (module, wire_key) in queued_keys:
                 continue
+            queued_keys.add((module, wire_key))
+
+            producer_module = entry.producer
+            producer_name = namify(producer_module.name)
+            producer_exposures = dumper.external_output_exposures.get(producer_module, {})
+            exposure = producer_exposures.get(wire_key)
+            if exposure is None:
+                continue
+            producer_port = exposure['output_name']
             assignments = [
                 f'{consumer_port}.assign(inst_{producer_name}.expose_{producer_port})',
                 f'{valid_name}.assign(inst_{producer_name}.valid_{producer_port})',

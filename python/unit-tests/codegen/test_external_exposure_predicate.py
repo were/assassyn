@@ -45,7 +45,6 @@ class _StubDumper:
         self.current_module = current_module
         self.external_wrapper_names = {}
         self.external_instance_names = {}
-        self.external_wire_outputs = {}
         self.external_output_exposures = defaultdict(dict)
 
     def dump_rval(self, node, _with_namespace, module_name=None):

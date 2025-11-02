@@ -64,10 +64,6 @@ class CIRCTDumper(Visitor):  # pylint: disable=too-many-instance-attributes,too-
         self.memory_defs = set()
         self.expr_to_name = {}
         self.name_counters = defaultdict(int)
-        # Track external module wiring during emission
-        self.external_wire_assignments = []
-        self.external_wire_assignment_keys = set()
-        self.external_wire_outputs = {}
         self.external_output_exposures = defaultdict(dict)
         self.external_wrapper_names = {}
         self.external_instance_names = {}

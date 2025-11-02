@@ -25,9 +25,6 @@ def generate_system(dumper: CIRCTDumper, node: SysBuilder):
     dumper.sys = sys
 
     dumper.external_output_exposures.clear()
-    dumper.external_wire_assignments.clear()
-    dumper.external_wire_assignment_keys.clear()
-    dumper.external_wire_outputs.clear()
     dumper.external_instance_names.clear()
     dumper.external_wrapper_names.clear()
 

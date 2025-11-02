@@ -47,7 +47,7 @@ Before `generate_system` runs, the caller (typically [`generate_design`](./desig
    - **Array User Analysis**: Populates the registry with every module that reads or writes each array by iterating the flattened `module.body` lists directly, so downstream passes can query a single source of truth without relying on dumper-specific helpers.
 
 3. **Module Analysis Phase**:
-   - **External Wiring**: Records which exposed values flow across module boundaries so the top-level harness can declare and route the corresponding wires; legacy `external_wire_assignments` have been retired in favour of the intrinsic-driven bookkeeping, which now includes both consumer-side port declarations and producer-side exposure planning. Async-call and dependency information are now read back from the frozen metadata when needed rather than re-collecting them here.
+   - **External Wiring**: Relies on the frozen `ExternalRegistry` to determine which exposed values flow across module boundaries; the top-level harness now queries the registry directly instead of consuming dumper-maintained assignment lists, while producer-side exposure planning continues to leverage `external_output_exposures`. Async-call and dependency information are read back from the frozen metadata when needed rather than re-collecting them here.
 
 4. **Module Generation Phase**:
    - **Regular Module Generation**: Generates code for all recorded modules; pure external stubs are filtered out earlier when collecting external intrinsic metadata.

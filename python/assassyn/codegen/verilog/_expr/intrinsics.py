@@ -157,47 +157,36 @@ def _handle_external_output(dumper, expr, intrinsic, rval):
     port_name = port_operand.value if hasattr(port_operand, 'value') else port_operand
     index_operand = expr.args[2] if len(expr.args) > 2 else None
 
-    result = None
     instance_owner = dumper.external_metadata.owner_for(instance)
     if instance_owner and instance_owner != dumper.current_module:
-        # Cross-module access: use the exposed port value provided on inputs.
         port_name_for_read = dumper.get_external_port_name(expr)
-        wire_key = dumper.get_external_wire_key(instance, port_name, index_operand)
-        assignment_key = (dumper.current_module, wire_key)
-        if assignment_key not in dumper.external_wire_assignment_keys:
-            dumper.external_wire_assignment_keys.add(assignment_key)
-            dumper.external_wire_assignments.append({
-                'consumer': dumper.current_module,
-                'producer': instance_owner,
-                'expr': expr,
-                'wire': wire_key,
-            })
-        result = f"{rval} = self.{port_name_for_read}"
-    else:
-        inst_name = dumper.external_instance_names.get(instance)
-        if inst_name is None:
-            inst_name = dumper.dump_rval(instance, False)
-            dumper.external_instance_names[instance] = inst_name
+        return f"{rval} = self.{port_name_for_read}"
 
-        port_specs = instance.external_class.port_specs()
-        wire_spec = port_specs.get(port_name)
+    result = None
+    inst_name = dumper.external_instance_names.get(instance)
+    if inst_name is None:
+        inst_name = dumper.dump_rval(instance, False)
+        dumper.external_instance_names[instance] = inst_name
 
-        if wire_spec is not None and wire_spec.kind == 'reg':
-            if index_operand is None:
-                result = f"{rval} = {inst_name}.{port_name}"
-            else:
-                idx_operand = unwrap_operand(index_operand)
-                if isinstance(idx_operand, Const) and idx_operand.value == 0:
-                    result = f"{rval} = {inst_name}.{port_name}"
-                else:
-                    index_code = dumper.dump_rval(index_operand, False)
-                    result = f"{rval} = {inst_name}.{port_name}[{index_code}]"
+    port_specs = instance.external_class.port_specs()
+    wire_spec = port_specs.get(port_name)
+
+    if wire_spec is not None and wire_spec.kind == 'reg':
+        if index_operand is None:
+            result = f"{rval} = {inst_name}.{port_name}"
         else:
-            if index_operand is None:
+            idx_operand = unwrap_operand(index_operand)
+            if isinstance(idx_operand, Const) and idx_operand.value == 0:
                 result = f"{rval} = {inst_name}.{port_name}"
             else:
                 index_code = dumper.dump_rval(index_operand, False)
                 result = f"{rval} = {inst_name}.{port_name}[{index_code}]"
+    else:
+        if index_operand is None:
+            result = f"{rval} = {inst_name}.{port_name}"
+        else:
+            index_code = dumper.dump_rval(index_operand, False)
+            result = f"{rval} = {inst_name}.{port_name}[{index_code}]"
 
     return result
 
@@ -259,7 +248,6 @@ def codegen_external_intrinsic(dumper, expr: ExternalIntrinsic) -> Optional[str]
                 continue
             seen_keys.add(wire_key)
             output_name = f"{rval}_{entry.port_name}"
-            dumper.external_wire_outputs[wire_key] = output_name
             meta_cond = expr.meta_cond if hasattr(expr, "meta_cond") else None
             exposures.setdefault(wire_key, {
                 'output_name': output_name,

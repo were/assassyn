@@ -1,61 +1,88 @@
 
 """Testbench generation for Verilog simulation."""
 
-from typing import List, Union
+from __future__ import annotations
+
+from dataclasses import dataclass
 from pathlib import Path
-from ...builder import SysBuilder
+from typing import Sequence, Union
+from textwrap import dedent
 
-TEMPLATE = '''
-import os
-import glob
-from pathlib import Path
-
-import cocotb
-from cocotb.triggers import Timer
-from cocotb.runner import get_runner
+from ...utils.enforce_type import enforce_type
 
 
+@dataclass(frozen=True)
+class TestbenchTemplateConfig:
+    """Structured parameters required to render the Cocotb testbench."""
 
-@cocotb.test()
-async def test_tb(dut):
+    sim_threshold: int
+    log_lines: Sequence[str]
+    extra_sources: Sequence[str]
+    output_dir: Union[str, Path] = Path("./sv/hw")
 
-    dut.clk.value = 1
-    dut.rst.value = 1
-    await Timer(500, units="ns")
-    dut.clk.value = 0
-    dut.rst.value = 0
-    await Timer(500, units="ns")
-    for cycle in range({}):
+
+TEMPLATE = dedent(
+    """
+    import os
+    import glob
+    from pathlib import Path
+
+    import cocotb
+    from cocotb.triggers import Timer
+    from cocotb.runner import get_runner
+
+
+    @cocotb.test()
+    async def test_tb(dut):
+
         dut.clk.value = 1
+        dut.rst.value = 1
         await Timer(500, units="ns")
         dut.clk.value = 0
+        dut.rst.value = 0
         await Timer(500, units="ns")
-        {}
-        if dut.global_finish.value == 1:
-            break
+        for cycle in range({threshold}):
+            dut.clk.value = 1
+            await Timer(500, units="ns")
+            dut.clk.value = 0
+            await Timer(500, units="ns")
+            {log_block}
+            if dut.global_finish.value == 1:
+                break
 
 
+    def runner():
+        sim = 'verilator'
+        path = Path('{output_dir}')
+        with open(path / 'filelist.f', 'r') as f:
+            srcs = [path / i.strip() for i in f.readlines()]
+        sram_blackbox_files = glob.glob('sram_blackbox_*.sv')
+        srcs = srcs + sram_blackbox_files
+        srcs = srcs + ['fifo.sv', 'trigger_counter.sv'{extras}]
+        runner = get_runner(sim)
+        runner.build(sources=srcs, hdl_toplevel='Top', always=True)
+        runner.test(hdl_toplevel='Top', test_module='tb')
 
-def runner():
-    sim = 'verilator'
-    path = Path('./sv/hw')
-    with open(path / 'filelist.f', 'r') as f:
-        srcs = [path / i.strip() for i in f.readlines()]
-    sram_blackbox_files = glob.glob('sram_blackbox_*.sv')
-    srcs = srcs + sram_blackbox_files
-    srcs = srcs + ['fifo.sv', 'trigger_counter.sv'{}]
-    runner = get_runner(sim)
-    runner.build(sources=srcs, hdl_toplevel='Top', always=True)
-    runner.test(hdl_toplevel='Top', test_module='tb')
 
-if __name__ == "__main__":
-    runner()'''
+    if __name__ == "__main__":
+        runner()
+    """
+).strip()
 
-def generate_testbench(fname: Union[str, Path], _sys: SysBuilder, sim_threshold: int,
-                       dump_logger: List[str], external_files: List[str]):
+
+@enforce_type
+def generate_testbench(fname: Union[str, Path], config: TestbenchTemplateConfig) -> None:
     """Generate a testbench file for the given system."""
-    with open(str(fname), "w", encoding='utf-8') as f:
-        dump_logger = '\n        '.join(dump_logger)
-        extra_sources = ''.join(f", '{name}'" for name in external_files)
-        tb_dump = TEMPLATE.format(sim_threshold, dump_logger, extra_sources)
-        f.write(tb_dump)
+
+    log_block = "\n        ".join(config.log_lines)
+    extra_sources = "".join(f", '{name}'" for name in config.extra_sources)
+    output_dir = Path(config.output_dir)
+
+    rendered = TEMPLATE.format(
+        threshold=config.sim_threshold,
+        log_block=log_block,
+        extras=extra_sources,
+        output_dir=output_dir.as_posix(),
+    )
+
+    Path(fname).write_text(rendered + "\n", encoding="utf-8")

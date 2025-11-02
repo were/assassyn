@@ -108,7 +108,32 @@ The function handles complex system-wide relationships:
 
 ## Internal Helpers
 
-The function uses several utility functions and data structures:
+`generate_top_harness` orchestrates a sequence of typed helper functions that each focus on
+a single responsibility:
+
+1. `_emit_sram_blackboxes(dumper, builder)` declares temporary wires and instantiates the
+   SRAM blackboxes captured in `dumper.memory_defs`.  It delegates clock/reset wiring and
+   taps the structured `SRAMInfo` objects returned by `utils.extract_sram_params`.
+2. `_declare_fifo_wires(dumper, builder)` materialises the reusable FIFO wire bundle for
+   every producer port, including push/pop valid/data/ready signals.  The helper uses
+   deterministic ordering to keep unit tests stable.
+3. `_emit_trigger_counters(dumper, builder)` builds the top-level TriggerCounter wrapper,
+   instantiates one per module, and wires the `delta_ready`, `pop_valid`, and
+   `pop_ready` signals.
+4. `_instantiate_modules(dumper, builder, *, module_order)` creates the PyCDE module
+   instances, passing the appropriate keyword arguments and gathering follow-up
+   assignments that tie off connections requiring cross-module data.
+5. `_connect_cross_module_wires(dumper, builder, connection_plan)` consumes the
+   assignments gathered during instantiation and emits the final wiring statements,
+   including external FFI exposures and FIFO push plumbing.
+
+Each helper writes to a small `TopHarnessBuilder` (a typed struct that accumulates code
+snippets and shared bindings) so logic is unit testable without invoking the full dumper.
+Predicate reductions inside these helpers defer to
+`python.assassyn.codegen.verilog.predicates` to keep mux semantics consistent with the
+cleanup pass.
+
+The helpers rely on the following utilities and metadata snapshots:
 
 - `dump_type()` and `dump_type_cast()` from [utils module](/python/assassyn/codegen/verilog/utils.md) for type handling
 - `get_sram_info()` from [utils module](/python/assassyn/codegen/verilog/utils.md) for SRAM information
@@ -118,7 +143,7 @@ The function uses several utility functions and data structures:
 - Metadata-driven checks for `FIFOPop` readiness: the predicated pop entries surfaced from `module_metadata.interactions.pops` (backed by the same tuples returned from `dumper.interactions.fifo_view(port).pops`) determine whether `<port>_pop_ready` connections should be emitted, replacing the legacy dumper helper traversal.
 - `_connect_array()` from [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) for array connections
 
-The function manages several CIRCTDumper state variables:
+Key `CIRCTDumper` state accessed during top-level emission includes:
 
 - `memory_defs`: SRAM memory definitions
 - `array_metadata`: Registry containing array write/read port assignments and usage

@@ -1,45 +1,73 @@
 """Utility functions for the Verilog backend."""
+
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
 from typing import Optional
 
+from ...ir.array import Array
 from ...ir.module import Module
 from ...ir.memory.sram import SRAM
 from ...ir.expr import Intrinsic
 from ...ir.dtype import Int, UInt, Bits, DType, Record
 from ...utils import namify
+from ...utils.enforce_type import enforce_type
 
-def get_sram_info(node: SRAM) -> dict:
+UINT_LITERAL = re.compile(r"UInt\(([^)]+)\)\(([^)]+)\)")
+CONTROL_PATTERNS = ("executed_wire", "_valid", "_pop_valid", "_push_valid")
+
+
+@dataclass(frozen=True)
+class SRAMInfo:
+    """Snapshot of the payload backing an SRAM module."""
+
+    array: Array
+    init_file: Optional[str]
+    width: int
+    depth: int
+
+
+@dataclass(frozen=True)
+class SRAMParams:
+    """Commonly used SRAM parameters surfaced for codegen helpers."""
+
+    info: SRAMInfo
+    array: Array
+    array_name: str
+    data_width: int
+    addr_width: int
+
+
+@enforce_type
+def get_sram_info(node: SRAM) -> SRAMInfo:
     """Extract SRAM-specific information."""
-    return {  # pylint: disable=protected-access
-        'array': node._payload,
-        'init_file': node.init_file,
-        'width': node.width,
-        'depth': node.depth
-    }
+    payload = getattr(node, '_payload')  # pylint: disable=protected-access
+    return SRAMInfo(
+        array=payload,
+        init_file=node.init_file,
+        width=node.width,
+        depth=node.depth,
+    )
 
 
-def extract_sram_params(node: SRAM) -> dict:
-    """Extract common SRAM parameters from an SRAM module.
+@enforce_type
+def extract_sram_params(node: SRAM) -> SRAMParams:
+    """Extract common SRAM parameters from an SRAM module."""
 
-    Args:
-        sram: SRAM module object
-
-    Returns:
-        dict: Dictionary containing array_name, data_width, and addr_width
-    """
-    sram_info = get_sram_info(node)
-    array = sram_info['array']
+    info = get_sram_info(node)
+    array = info.array
     array_name = namify(array.name)
     data_width = array.scalar_ty.bits
     addr_width = array.index_bits if array.index_bits > 0 else 1
 
-    return {
-        'sram_info': sram_info,
-        'array': array,
-        'array_name': array_name,
-        'data_width': data_width,
-        'addr_width': addr_width
-    }
+    return SRAMParams(
+        info=info,
+        array=array,
+        array_name=array_name,
+        data_width=data_width,
+        addr_width=addr_width,
+    )
 
 def find_wait_until(module: Module) -> Optional[Intrinsic]:
     """Find the WAIT_UNTIL intrinsic in a module if it exists."""
@@ -53,16 +81,11 @@ def find_wait_until(module: Module) -> Optional[Intrinsic]:
 
 def ensure_bits(expr_str: str) -> str:
     """Ensure an expression is of Bits type, converting if necessary."""
-    uint_pattern = r'UInt\(([^)]+)\)\(([^)]+)\)'
-    if re.search(uint_pattern, expr_str):
-        expr_str = re.sub(uint_pattern, r'Bits(\1)(\2)', expr_str)
+    if UINT_LITERAL.search(expr_str):
+        return UINT_LITERAL.sub(r"Bits(\1)(\2)", expr_str)
+    if "Bits(" in expr_str or ".as_bits()" in expr_str:
         return expr_str
-    if "Bits(" in expr_str:
-        return expr_str
-    if ".as_bits()" in expr_str:
-        return expr_str
-    if any(pattern in expr_str for pattern in \
-           ["executed_wire", "_valid", "_pop_valid", "_push_valid"]):
+    if any(pattern in expr_str for pattern in CONTROL_PATTERNS):
         return expr_str
     return f"{expr_str}.as_bits()"
 

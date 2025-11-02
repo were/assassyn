@@ -164,17 +164,15 @@ def codegen_select1hot(dumper, expr: Select1Hot) -> Optional[str]:
     num_values = len(values)
     selector_bits = max((num_values - 1).bit_length(), 1)
     if num_values == 2:
-        body = f"{cond}.as_bits()[1]"
-    else:
-        dumper.append_code(f"{cond}_res = Bits({selector_bits})(0)")
-        for i in range(num_values):
-            dumper.append_code(
-                f"{cond}_res = Mux({cond}[{i}] ,"
-                f" {cond}_res , Bits({selector_bits})({i}))")
+        return f"{rval} = Mux({cond}.as_bits()[1], {values[0]}, {values[1]})"
 
-        values_str = ", ".join(values)
-        mux_code = f"{rval} = Mux({cond}_res, {values_str})"
-        dumper.append_code(mux_code)
-        return None
+    dumper.append_code(f"{cond}_res = Bits({selector_bits})(0)")
+    for i in range(num_values):
+        dumper.append_code(
+            f"{cond}_res = Mux({cond}[{i}] ,"
+            f" {cond}_res , Bits({selector_bits})({i}))")
 
-    return body
+    values_str = ", ".join(values)
+    mux_code = f"{rval} = Mux({cond}_res, {values_str})"
+    dumper.append_code(mux_code)
+    return None

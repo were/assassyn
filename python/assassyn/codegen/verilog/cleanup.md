@@ -6,6 +6,12 @@ This module provides post-generation cleanup utilities for Verilog code generati
 
 The cleanup module is responsible for generating the final control signals and interconnections after the main Verilog code generation is complete. It handles complex signal routing for arrays, ports, modules, and memory interfaces, ensuring proper connectivity between generated modules according to the credit-based pipeline architecture. As part of the external module flow, it also materialises producer-side `expose_*`/`valid_*` ports for any external register outputs that are consumed by another module, so cross-module reads can be wired up without duplicating logic.  FIFO wiring now consumes the metadata snapshot produced by the pre-pass instead of mutating registries during emission.
 
+Following the 2024-03 refresh the module now depends on
+`python.assassyn.codegen.verilog.predicates` for all predicate reductions and mux-chain
+construction.  Shared helpers (`reduce_predicates`, `emit_predicate_mux_chain`) replace
+the previous private `predicates.reduce_predicates` / `predicates.emit_predicate_mux_chain` pair, so the
+cleanup logic mirrors the top-level harness and keeps ordering semantics in one place.
+
 Metadata consumed here (`ModuleMetadata`, `ModuleInteractionView`, `ArrayMetadata`,
 and `FIFOInteractionView`) is provided by the `python.assassyn.codegen.verilog.metadata`
 package.  Implementations live in the `metadata.module`, `metadata.array`, and
@@ -25,7 +31,7 @@ def cleanup_post_generation(dumper):
 This is the main cleanup function that generates all the necessary control signals and interconnections after the primary Verilog code generation is complete. It performs the following steps:
 
 1. **Execution Signal Generation**: Creates the `executed_wire` signal that determines when a module should execute:
-   - For downstream modules: Gathers upstream dependencies with `analysis.get_upstreams(module)` and ORs their `executed` flags via `_format_reduction_expr(..., op="or_", default_literal="Bits(1)(0)")`.
+   - For downstream modules: Gathers upstream dependencies with `analysis.get_upstreams(module)` and ORs their `executed` flags via `predicates.reduce_predicates(..., op="or_", default_literal="Bits(1)(0)")`.
    - For regular modules: ANDs the trigger-counter pop-valid input with any active `wait_until` predicate recorded during expression lowering using the same helper with `op="and_"` and a `Bits(1)(1)` default.
 
 2. **Finish Signal Generation**: Reduces every FINISH site captured in
@@ -38,13 +44,13 @@ This is the main cleanup function that generates all the necessary control signa
    `module_metadata.interactions.writes`:
    - Filters out arrays whose owner is a memory instance and satisfy `array.is_payload(owner)`, because those are handled by dedicated memory logic.
    - Uses the module view’s `writes(array)` tuples (which mirror the global array view maintained by the `InteractionMatrix`) to map interactions onto the precomputed port indices stored in the `ArrayMetadataRegistry`.
-   - Emits write-enable, write-data, and write-index signals per port, formatting each write’s `expr.meta_cond` with `dumper.format_predicate`. Multi-writer modules rely on `_emit_predicate_mux_chain` to collapse predicates and thread prioritised mux chains for data and indices, guaranteeing consistent selection semantics.
+   - Emits write-enable, write-data, and write-index signals per port, formatting each write’s `expr.meta_cond` with `dumper.format_predicate`. Multi-writer modules rely on `predicates.emit_predicate_mux_chain` to collapse predicates and thread prioritised mux chains for data and indices, guaranteeing consistent selection semantics.
 
 5. **FIFO Signal Generation**: Walks `module_metadata.interactions.fifo_ports` to visit each FIFO touched by the module:
    - Pulls the per-port `FIFOInteractionView` directly from the shared matrix so the recorded `FIFOPush` / `FIFOPop` expressions stay in sync across consumers—predicates come from each expression’s `meta_cond`, push data from `expr.val`, and module ownership from the metadata view that registered the expression.
    - Applies backpressure via the parent module's `fifo_*_push_ready` signals and emits valid/data assignments driven purely from metadata captured during the pre-pass.
    - Produces the module-local `*_pop_ready` backpressure signal without consulting dumper internals.
-   - Reuses `_emit_predicate_mux_chain` so the push-valid reduction and push-data mux mirror the prioritisation used for array writes.
+   - Reuses `predicates.emit_predicate_mux_chain` so the push-valid reduction and push-data mux mirror the prioritisation used for array writes.
 
 6. **Module Trigger Signal Generation**: Reads async trigger exposures from `dumper.interactions.async_ledger.calls_for_module(current_module)`, sums all predicates (each taken from the call’s `meta_cond` and converted to an 8-bit increment), and routes the result into `<callee>_trigger`.
 
@@ -86,10 +92,10 @@ This function generates the control signals specifically for SRAM memory interfa
 - Understanding of [SRAM memory model](/python/assassyn/ir/memory/sram.md)
 - Knowledge of [array read/write operations](/python/assassyn/ir/expr/array.md)
 
-### `_emit_predicate_mux_chain`
+### `emit_predicate_mux_chain`
 
 ```python
-def _emit_predicate_mux_chain(entries, *, render_predicate, render_value, default_value, aggregate_predicates):
+def emit_predicate_mux_chain(entries, *, render_predicate, render_value, default_value, aggregate_predicates):
     """Return both the mux chain and aggregate predicate for *entries*."""
 ```
 
@@ -113,7 +119,7 @@ The module uses several internal helper functions and imports utilities from oth
 - `dump_type()` and `dump_type_cast()` from [utils](/python/assassyn/codegen/verilog/utils.md) for type handling
 - `get_sram_info()` from [utils](/python/assassyn/codegen/verilog/utils.md) for SRAM information extraction
 - `namify()` and `unwrap_operand()` from [utils](/python/assassyn/utils.md) for name generation and operand handling
-- `_format_reduction_expr(predicates, *, default_literal, op="or_")` canonicalises OR/AND-style predicate reductions, emitting caller-provided defaults for empty sequences while allowing any reducer supported by the dumper runtime.
-- `_emit_predicate_mux_chain()` centralises predicate-driven mux construction so callers reuse ordering and reduction semantics.
+- `predicates.reduce_predicates(predicates, *, default_literal, op="or_")` canonicalises OR/AND-style predicate reductions, emitting caller-provided defaults for empty sequences while allowing any reducer supported by the dumper runtime.
+- `predicates.emit_predicate_mux_chain()` centralises predicate-driven mux construction so callers reuse ordering and reduction semantics.
 
 The cleanup process is tightly integrated with the [CIRCTDumper](/python/assassyn/codegen/verilog/design.md) class and is called as the final step in module generation to ensure all interconnections are properly established.

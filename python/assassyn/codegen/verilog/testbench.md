@@ -11,8 +11,8 @@ The testbench generation module creates Python-based testbenches using the Cocot
 ### `generate_testbench`
 
 ```python
-def generate_testbench(fname: Union[str, Path], _sys: SysBuilder, sim_threshold: int,
-                       dump_logger: List[str], external_files: List[str]):
+@enforce_type
+def generate_testbench(fname: Union[str, Path], config: TestbenchTemplateConfig) -> None:
     """Generate a testbench file for the given system."""
 ```
 
@@ -21,9 +21,13 @@ def generate_testbench(fname: Union[str, Path], _sys: SysBuilder, sim_threshold:
 This function generates a complete Cocotb-based testbench for Verilog simulation. It performs the following steps:
 
 1. **Template Processing**: Uses a predefined template to generate the testbench code
+   while substituting the values stored in `TestbenchTemplateConfig`.
 2. **Log Integration**: Embeds the generated log statements from the design generation
-3. **Source File Management**: Includes all necessary source files for simulation
-4. **Simulation Control**: Sets up proper simulation parameters and control flow
+   (`config.log_lines`), preserving their order for deterministic tests.
+3. **Source File Management**: Includes all necessary source files for simulation,
+   combining core HDL resources with `config.extra_sources`.
+4. **Simulation Control**: Sets up proper simulation parameters and control flow using
+   `config.sim_threshold` and the clock/reset defaults captured in the template.
 
 The generated testbench includes:
 
@@ -40,7 +44,8 @@ The testbench template handles:
 - **Reset Sequence**: Active-high reset for 500ns followed by normal operation
 - **Simulation Control**: Runs for the specified number of cycles or until finish
 - **Source File Management**: Includes all necessary Verilog source files
-- **External File Support**: Includes additional external SystemVerilog files
+- **External File Support**: Includes additional external SystemVerilog files supplied in
+  `config.extra_sources`
 
 **Project-specific Knowledge Required**:
 - Understanding of [Cocotb framework](https://docs.cocotb.org/) for Python-based verification
@@ -50,13 +55,18 @@ The testbench template handles:
 
 ## Internal Constants
 
-### `TEMPLATE`
+### `TestbenchTemplateConfig` and `TEMPLATE`
 
-The `TEMPLATE` constant contains the complete Cocotb testbench template with placeholders for:
+`TestbenchTemplateConfig` is a dataclass that captures the information required to render
+the template:
 
-- **Simulation Threshold**: `{}` - Maximum number of simulation cycles
-- **Log Statements**: `{}` - Generated log statements from the design
-- **External Files**: `{}` - Additional external SystemVerilog files
+- **sim_threshold**: Maximum number of simulation cycles
+- **log_lines**: Ordered log statements emitted by `CIRCTDumper`
+- **extra_sources**: Additional external SystemVerilog files
+- **output_dir**: Optional override for the runner’s HDL path (defaults to `sv/hw`)
+
+The `TEMPLATE` constant contains the complete Cocotb testbench template with placeholders
+that `generate_testbench` fills via `str.format`.
 
 The template includes:
 

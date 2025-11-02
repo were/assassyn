@@ -349,9 +349,9 @@ def generate_design(fname: Union[str, Path], sys: SysBuilder) -> None:
         if sram_modules:
             for sram in sram_modules:
                 params = extract_sram_params(sram)
-                array_name = params['array_name']
-                data_width = params['data_width']
-                addr_width = params['addr_width']
+                array_name = params.array_name
+                data_width = params.data_width
+                addr_width = params.addr_width
                 dumper.memory_defs.add((data_width, addr_width, array_name))
 
             # Write sramBlackbox module definitions

@@ -3,7 +3,9 @@
 """Top-level harness generation for Verilog designs."""
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Optional
 
 from .utils import (
     dump_type,
@@ -21,13 +23,126 @@ from ...ir.expr import (
 )
 from ...ir.expr.intrinsic import ExternalIntrinsic
 from ...ir.dtype import Record
-from ...utils import namify, unwrap_operand
+from ...utils import enforce_type, namify, unwrap_operand
 from ...ir.const import Const
 
 if TYPE_CHECKING:
     from .design import CIRCTDumper
 else:
     CIRCTDumper = Any  # type: ignore
+
+
+@dataclass
+class TopHarnessBuilder:
+    """Collect and emit lines for the top-level harness."""
+
+    dumper: Optional["CIRCTDumper"] = None
+    indent: int = 0
+    _buffer: list[str] = field(default_factory=list)
+
+    def line(self, text: str = "") -> None:
+        """Emit a single line of code."""
+        prefix = " " * self.indent
+        rendered = f"{prefix}{text}" if text else ""
+        if self.dumper is not None:
+            self.dumper.code.append(rendered)
+        else:
+            self._buffer.append(rendered)
+
+    def blank_line(self) -> None:
+        """Emit an empty line."""
+        self.line("")
+
+    @contextmanager
+    def indent_block(self, delta: int = 4):
+        """Context manager that temporarily increases indentation."""
+        self.indent += delta
+        try:
+            yield
+        finally:
+            self.indent -= delta
+
+    def render(self) -> list[str]:
+        """Return the emitted lines (used in tests)."""
+        if self.dumper is not None:
+            return list(self.dumper.code)
+        return list(self._buffer)
+
+
+@enforce_type
+def _emit_sram_blackboxes(dumper: "CIRCTDumper", builder: TopHarnessBuilder) -> None:
+    """Emit wire declarations and instantiations for SRAM blackboxes."""
+    if not getattr(dumper, "memory_defs", None):
+        return
+
+    builder.blank_line()
+    builder.line("# --- SRAM Memory Blackbox Instances ---")
+    for data_width, addr_width, array_name in sorted(dumper.memory_defs, key=lambda item: item[2]):
+        builder.line(f"mem_{array_name}_dataout = Wire(Bits({data_width}))")
+        builder.line(f"mem_{array_name}_address = Wire(Bits({addr_width}))")
+        builder.line(f"mem_{array_name}_write_data = Wire(Bits({data_width}))")
+        builder.line(f"mem_{array_name}_write_enable = Wire(Bits(1))")
+        builder.line(f"mem_{array_name}_read_enable = Wire(Bits(1))")
+        builder.blank_line()
+        builder.line("# Instantiate memory blackbox module")
+        builder.line(
+            f"mem_{array_name}_inst = sramBlackbox_{array_name}()"
+            f"(clk=self.clk, rst_n=~self.rst, "
+            f"address=mem_{array_name}_address, "
+            f"wd=mem_{array_name}_write_data, "
+            "banksel=Bits(1)(1), "
+            f"read=mem_{array_name}_read_enable, "
+            f"write=mem_{array_name}_write_enable)"
+        )
+        builder.blank_line()
+        builder.line(f"mem_{array_name}_dataout.assign(mem_{array_name}_inst.dataout)")
+        builder.blank_line()
+
+
+@enforce_type
+def _declare_fifo_wires(dumper: "CIRCTDumper", builder: TopHarnessBuilder) -> None:
+    """Declare shared FIFO wires for every producer port."""
+    modules = sorted(getattr(dumper.sys, "modules", []), key=lambda mod: namify(mod.name))
+    for module in modules:
+        module_name = namify(module.name)
+        ports = sorted(getattr(module, "ports", []), key=lambda port: namify(port.name))
+        for port in ports:
+            fifo_base_name = f"fifo_{module_name}_{namify(port.name)}"
+            builder.line(f"# Wires for FIFO connected to {module.name}.{port.name}")
+            builder.line(f"{fifo_base_name}_push_valid = Wire(Bits(1))")
+            builder.line(f"{fifo_base_name}_push_data = Wire(Bits({port.dtype.bits}))")
+            builder.line(f"{fifo_base_name}_push_ready = Wire(Bits(1))")
+            builder.line(f"{fifo_base_name}_pop_valid = Wire(Bits(1))")
+            builder.line(f"{fifo_base_name}_pop_data = Wire(Bits({port.dtype.bits}))")
+            builder.line(f"{fifo_base_name}_pop_ready = Wire(Bits(1))")
+
+
+@enforce_type
+def _emit_trigger_counters(dumper: "CIRCTDumper", builder: TopHarnessBuilder) -> None:
+    """Declare trigger-counter wires and instantiate trigger counters."""
+    modules = sorted(getattr(dumper.sys, "modules", []), key=lambda mod: namify(mod.name))
+    for module in modules:
+        tc_base_name = f"{namify(module.name)}_trigger_counter"
+        builder.line(f"# Wires for {module.name}'s TriggerCounter")
+        builder.line(f"{tc_base_name}_delta = Wire(Bits(8))")
+        builder.line(f"{tc_base_name}_delta_ready = Wire(Bits(1))")
+        builder.line(f"{tc_base_name}_pop_valid = Wire(Bits(1))")
+        builder.line(f"{tc_base_name}_pop_ready = Wire(Bits(1))")
+
+    if modules:
+        builder.blank_line()
+
+    for module in modules:
+        tc_base_name = f"{namify(module.name)}_trigger_counter"
+        builder.line(
+            f"{tc_base_name}_inst = TriggerCounter(WIDTH=8)"
+            f"(clk=self.clk, rst_n=~self.rst, "
+            f"delta={tc_base_name}_delta, pop_ready={tc_base_name}_pop_ready)"
+        )
+        builder.line(f"{tc_base_name}_delta_ready.assign({tc_base_name}_inst.delta_ready)")
+        builder.line(f"{tc_base_name}_pop_valid.assign({tc_base_name}_inst.pop_valid)")
+        builder.blank_line()
+
 
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 def generate_top_harness(dumper: CIRCTDumper):
@@ -47,31 +162,8 @@ def generate_top_harness(dumper: CIRCTDumper):
     dumper.append_code('def construct(self):')
     dumper.indent += 4
 
-    sram_modules = [m for m in dumper.sys.downstreams if isinstance(m, SRAM)]
-    if sram_modules:
-        dumper.append_code('\n# --- SRAM Memory Blackbox Instances ---')
-        for data_width, addr_width, array_name in dumper.memory_defs:
-            dumper.append_code(f'mem_{array_name}_dataout = Wire(Bits({data_width}))')
-            dumper.append_code(f'mem_{array_name}_address = Wire(Bits({addr_width}))')
-            dumper.append_code(f'mem_{array_name}_write_data = Wire(Bits({data_width}))')
-            dumper.append_code(f'mem_{array_name}_write_enable = Wire(Bits(1))')
-            dumper.append_code(f'mem_{array_name}_read_enable = Wire(Bits(1))')
-
-            # Instantiate memory blackbox (as external Verilog module)
-            dumper.append_code('# Instantiate memory blackbox module')
-            dumper.append_code(
-                f'mem_{array_name}_inst = sramBlackbox_{array_name}()'
-                '(clk=self.clk, rst_n=~self.rst, '
-                f'address=mem_{array_name}_address, '
-                f'wd=mem_{array_name}_write_data, '
-                'banksel=Bits(1)(1), '
-                f'read=mem_{array_name}_read_enable, '
-                f'write=mem_{array_name}_write_enable)'
-            )
-
-            # Now mem_{array_name}_dataout is properly driven by the module output
-            dumper.append_code(f'mem_{array_name}_dataout.assign(mem_{array_name}_inst.dataout)')
-            dumper.append_code('')
+    builder = TopHarnessBuilder(dumper=dumper, indent=dumper.indent)
+    _emit_sram_blackboxes(dumper, builder)
 
     dumper.append_code('\n# --- Global Cycle Counter ---')
     dumper.append_code('# A free-running counter for testbench control')
@@ -84,25 +176,9 @@ def generate_top_harness(dumper: CIRCTDumper):
 
     # --- 1. Wire Declarations (Generic) ---
     dumper.append_code('# --- Wires for FIFOs, Triggers, and Arrays ---')
-    for module in dumper.sys.modules:
-        for port in module.ports:
-            fifo_base_name = f'fifo_{namify(module.name)}_{namify(port.name)}'
-            dumper.append_code(f'# Wires for FIFO connected to {module.name}.{port.name}')
-            dumper.append_code(f'{fifo_base_name}_push_valid = Wire(Bits(1))')
-            dumper.append_code(f'{fifo_base_name}_push_data = Wire(Bits({port.dtype.bits}))')
-            dumper.append_code(f'{fifo_base_name}_push_ready = Wire(Bits(1))')
-            dumper.append_code(f'{fifo_base_name}_pop_valid = Wire(Bits(1))')
-            dumper.append_code(f'{fifo_base_name}_pop_data = Wire(Bits({port.dtype.bits}))')
-            dumper.append_code(f'{fifo_base_name}_pop_ready = Wire(Bits(1))')
-
-    # Wires for TriggerCounters (one per module)
-    for module in dumper.sys.modules:
-        tc_base_name = f'{namify(module.name)}_trigger_counter'
-        dumper.append_code(f'# Wires for {module.name}\'s TriggerCounter')
-        dumper.append_code(f'{tc_base_name}_delta = Wire(Bits(8))')
-        dumper.append_code(f'{tc_base_name}_delta_ready = Wire(Bits(1))')
-        dumper.append_code(f'{tc_base_name}_pop_valid = Wire(Bits(1))')
-        dumper.append_code(f'{tc_base_name}_pop_ready = Wire(Bits(1))')
+    builder.indent = dumper.indent
+    _declare_fifo_wires(dumper, builder)
+    _emit_trigger_counters(dumper, builder)
 
     for arr_container in dumper.sys.arrays:
         arr = arr_container
@@ -217,18 +293,6 @@ def generate_top_harness(dumper: CIRCTDumper):
             )
 
     # Instantiate TriggerCounters
-    for module in dumper.sys.modules:
-        tc_base_name = f'{namify(module.name)}_trigger_counter'
-        dumper.append_code(
-            f'{tc_base_name}_inst = TriggerCounter(WIDTH=8)'
-            f'(clk=self.clk, rst_n=~self.rst, '
-            f'delta={tc_base_name}_delta, pop_ready={tc_base_name}_pop_ready)'
-        )
-        dumper.append_code(
-            f'{tc_base_name}_delta_ready.assign({tc_base_name}_inst.delta_ready)'
-        )
-        dumper.append_code(f'{tc_base_name}_pop_valid.assign({tc_base_name}_inst.pop_valid)')
-
     all_driven_fifo_ports = set()
 
     dumper.append_code('\n# --- Module Instantiations and Connections ---')
@@ -367,7 +431,7 @@ def generate_top_harness(dumper: CIRCTDumper):
 
             if is_sram:
                 sram_info = get_sram_info(module)
-                array = sram_info['array']
+                array = sram_info.array
                 array_name = namify(array.name)
                 port_map.append(f'mem_dataout=mem_{array_name}_dataout')
 
@@ -420,7 +484,7 @@ def generate_top_harness(dumper: CIRCTDumper):
 
         if is_sram:
             sram_info = get_sram_info(module)
-            array = sram_info['array']
+            array = sram_info.array
             array_name = namify(array.name)
             connection_lines.extend([
                 f'mem_{array_name}_address.assign(inst_{mod_name}.mem_address)',

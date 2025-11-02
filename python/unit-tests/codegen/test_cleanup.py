@@ -17,9 +17,9 @@ from assassyn.frontend import (  # type: ignore
     push_condition,
     pop_condition,
 )
-from assassyn.codegen.verilog.cleanup import (  # type: ignore
-    _emit_predicate_mux_chain,
-    _format_reduction_expr,
+from assassyn.codegen.verilog.predicates import (  # type: ignore
+    emit_predicate_mux_chain,
+    reduce_predicates,
 )
 from assassyn.codegen.verilog.design import CIRCTDumper  # type: ignore
 from assassyn.codegen.verilog.analysis import collect_fifo_metadata  # type: ignore
@@ -302,18 +302,18 @@ def test_fifo_push_single_entry_passthrough():
     assert assignments == expected
 
 
-def test_format_reduction_expr_supports_and_operator_with_defaults():
+def test_reduce_predicates_supports_and_operator_with_defaults():
     """Generalised helper emits AND reductions and surfaces defaults."""
     assert (
-        _format_reduction_expr([], default_literal="Bits(1)(1)", op="and_")
+        reduce_predicates([], default_literal="Bits(1)(1)", op="and_")
         == "Bits(1)(1)"
     )
     assert (
-        _format_reduction_expr(["lhs"], default_literal="Bits(1)(1)", op="and_")
+        reduce_predicates(["lhs"], default_literal="Bits(1)(1)", op="and_")
         == "reduce(and_, [lhs], Bits(1)(1))"
     )
     assert (
-        _format_reduction_expr(["lhs", "rhs"], default_literal="Bits(1)(1)", op="and_")
+        reduce_predicates(["lhs", "rhs"], default_literal="Bits(1)(1)", op="and_")
         == "reduce(and_, [lhs, rhs], Bits(1)(1))"
     )
 
@@ -325,12 +325,12 @@ def test_emit_predicate_mux_chain_preserves_custom_reduce():
     def render_predicate(entry):
         return f"{entry}_pred"
 
-    mux_expr, predicate_expr = _emit_predicate_mux_chain(
+    mux_expr, predicate_expr = emit_predicate_mux_chain(
         entries,
         render_predicate=render_predicate,
         render_value=lambda entry: entry,
         default_value="DEFAULT",
-        aggregate_predicates=lambda preds: _format_reduction_expr(
+        aggregate_predicates=lambda preds: reduce_predicates(
             preds,
             default_literal="Bits(1)(1)",
             op="and_",
@@ -346,9 +346,9 @@ def test_emit_predicate_mux_chain_empty_sequence_defaults():
     default_value = "UInt(8)(0)"
 
     def aggregate(predicates):
-        return _format_reduction_expr(predicates, default_literal="Bits(1)(0)")
+        return reduce_predicates(predicates, default_literal="Bits(1)(0)")
 
-    mux_expr, predicate_expr = _emit_predicate_mux_chain(
+    mux_expr, predicate_expr = emit_predicate_mux_chain(
         [],
         render_predicate=lambda entry: entry,
         render_value=lambda entry: entry,

@@ -58,6 +58,14 @@ symbols while housing their implementations across `metadata.core`, `metadata.mo
 4. **Stage Register Management**: Stage registers are managed for pipeline state
 5. **Asynchronous Call Handling**: Asynchronous calls are handled through the pipeline
 
+**Helper Structure (Post 2024-03 refresh):**
+
+1. **Predicate Utilities**: Reusable predicate reducers and mux-threading helpers now live in `python/assassyn/codegen/verilog/predicates.py`. Both the dumper cleanup pass and the top-level harness delegate to these utilities so that enable aggregation and prioritised mux chains stay consistent.
+2. **Top-Level Emitters**: `python/assassyn/codegen/verilog/top.py` exposes a small set of typed helpers (`_emit_sram_blackboxes`, `_declare_fifo_wires`, `_emit_trigger_counters`, `_instantiate_modules`, `_connect_cross_module_wires`) that each focus on a single concern. `generate_top_harness` orchestrates these helpers while keeping side effects explicit and unit testable.
+3. **Elaboration Resource Planning**: The elaboration entry point builds a `ResourceCopyPlan` dataclass which records helper files, alias modules, and external sources. File-copy helpers consume this plan instead of receiving loosely typed lists, producing deterministic output.
+4. **SRAM Metadata Access**: SRAM-related helpers return structured `SRAMInfo` objects with named fields instead of bare dictionaries. The `enforce_type` decorator ensures these helpers are only invoked with known SRAM nodes.
+5. **Testbench Template API**: The testbench generator consumes a `TestbenchTemplateConfig` structure that captures run thresholds, log snippets, and auxiliary sources. This replaces ad-hoc string concatenation and simplifies deterministic testing of the emitted Python harness.
+
 **Function Name Inconsistencies (Documented as Potential Improvements):** The Verilog design generation has some function names that don't match their actual implementation:
 
 1. **`cleanup_post_generation`**: Actually generates signal routing, not cleanup
@@ -118,7 +126,7 @@ The CIRCTDumper class is the main visitor that converts Assassyn IR into Verilog
 7. **Code Generation**: `code`, `logs`, and `indent` store emitted lines and diagnostic information used later by the testbench.
 8. **Module Metadata**: `module_metadata` maps each `Module` to its `ModuleMetadata`. The structure tracks FINISH intrinsics, async calls, FIFO interactions (annotated with `expr.meta_cond`), and every array/value exposure required for cleanup. These entries are populated before the dumper is constructed via [`collect_fifo_metadata`](./analysis.md), so `CIRCTDumper` receives a frozen snapshot and never mutates it during emission. See [metadata module](/python/assassyn/codegen/verilog/metadata.md) for details. The dumper exposes this information via convenience helpers such as `async_callers(module)`, which forwards to the frozen `AsyncLedger` stored on the interaction matrix.
 
-During the cleanup pass the dumper feeds the precomputed metadata into `_emit_predicate_mux_chain`, producing both the `reduce(or_, …)` guards and prioritised mux chains shared by array writes and FIFO pushes. The helper now short-circuits single-entry collections to direct assignments and relies on caller-supplied defaults when metadata yields no interactions, keeping the emitted Verilog stable if predicate formatting or default literals change in the future.
+During the cleanup pass the dumper feeds the precomputed metadata into `predicates.emit_predicate_mux_chain`, producing both the `reduce(or_, …)` guards and prioritised mux chains shared by array writes and FIFO pushes. The helper now short-circuits single-entry collections to direct assignments and relies on caller-supplied defaults when metadata yields no interactions, keeping the emitted Verilog stable if predicate formatting or default literals change in the future.
 
 #### Key Methods
 

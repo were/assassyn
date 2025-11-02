@@ -22,6 +22,7 @@ def generate_module_ports(dumper, node: Module) -> None:
     """
     is_downstream = isinstance(node, Downstream)
     is_sram = isinstance(node, SRAM)
+    sram_info = get_sram_info(node) if is_sram else None
     async_callers = list(dumper.async_callers(node))
     is_driver = not async_callers
 
@@ -41,16 +42,14 @@ def generate_module_ports(dumper, node: Module) -> None:
         upstream_modules = sorted(get_upstreams(node), key=lambda mod: mod.name)
         for dep_mod in upstream_modules:
             dumper.append_code(f'{namify(dep_mod.name)}_executed = Input(Bits(1))')
-        if is_sram:
-            sram_info = get_sram_info(node)
-            if sram_info:
-                sram_array = sram_info['array']
-                dumper.append_code(f'mem_dataout = Input({dump_type(sram_array.scalar_ty)})')
-                index_bits = sram_array.index_bits if sram_array.index_bits > 0 else 1
-                dumper.append_code(f'mem_address = Output(Bits({index_bits}))')
-                dumper.append_code(f'mem_write_data = Output({dump_type(sram_array.scalar_ty)})')
-                dumper.append_code('mem_write_enable = Output(Bits(1))')
-                dumper.append_code('mem_read_enable = Output(Bits(1))')
+        if is_sram and sram_info is not None:
+            sram_array = sram_info.array
+            dumper.append_code(f'mem_dataout = Input({dump_type(sram_array.scalar_ty)})')
+            index_bits = sram_array.index_bits if sram_array.index_bits > 0 else 1
+            dumper.append_code(f'mem_address = Output(Bits({index_bits}))')
+            dumper.append_code(f'mem_write_data = Output({dump_type(sram_array.scalar_ty)})')
+            dumper.append_code('mem_write_enable = Output(Bits(1))')
+            dumper.append_code('mem_read_enable = Output(Bits(1))')
 
     elif is_driver or async_callers:
         dumper.append_code('trigger_counter_pop_valid = Input(Bits(1))')
@@ -121,9 +120,8 @@ def generate_module_ports(dumper, node: Module) -> None:
     # pylint: disable=too-many-nested-blocks
     for arr_container in dumper.sys.arrays:
         arr = arr_container
-        if is_sram:
-            sram_info = get_sram_info(node)
-            if sram_info and arr == sram_info['array']:
+        if is_sram and sram_info is not None:
+            if arr == sram_info.array:
                 continue
         metadata = dumper.array_metadata.metadata_for(arr)
         if metadata is None:

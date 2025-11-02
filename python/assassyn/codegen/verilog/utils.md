@@ -55,20 +55,24 @@ The `bits` parameter allows specifying a custom bit width for the cast operation
 ### `get_sram_info`
 
 ```python
-def get_sram_info(node: SRAM) -> dict:
+@enforce_type
+def get_sram_info(node: SRAM) -> SRAMInfo:
     """Extract SRAM-specific information."""
 ```
 
 **Explanation**
 
-This function extracts essential information from an SRAM module for Verilog generation. It returns a dictionary containing:
+This function extracts essential information from an SRAM module for Verilog generation and
+returns an `SRAMInfo` dataclass with named fields:
 
 1. **array**: The underlying array object (`node._payload`)
 2. **init_file**: Initialization file path for the SRAM
 3. **width**: Data width of the SRAM
 4. **depth**: Depth (number of entries) of the SRAM
 
-This information is used by other modules to generate appropriate SRAM interface signals and memory control logic.
+The structured return type avoids dictionary lookups and surfaces IDE/type-checker support
+throughout the backend.  Other modules consume the dataclass to generate SRAM interface
+signals and memory control logic.
 
 **Project-specific Knowledge Required**:
 - Understanding of [SRAM memory model](/python/assassyn/ir/memory/sram.md)
@@ -77,28 +81,25 @@ This information is used by other modules to generate appropriate SRAM interface
 ### `extract_sram_params`
 
 ```python
-def extract_sram_params(node: SRAM) -> dict:
-    """Extract common SRAM parameters from an SRAM module.
-
-    Args:
-        sram: SRAM module object
-
-    Returns:
-        dict: Dictionary containing array_name, data_width, and addr_width
-    """
+@enforce_type
+def extract_sram_params(node: SRAM) -> SRAMParams:
+    """Extract common SRAM parameters from an SRAM module."""
 ```
 
 **Explanation**
 
-This function provides a higher-level interface for extracting SRAM parameters needed for Verilog generation. It combines `get_sram_info()` with additional processing to provide:
+This function provides a higher-level interface for extracting SRAM parameters needed for
+Verilog generation. It combines `get_sram_info()` with additional processing to populate an
+`SRAMParams` dataclass that surfaces:
 
-1. **sram_info**: The raw SRAM information dictionary
+1. **info**: The raw `SRAMInfo` snapshot
 2. **array**: The underlying array object
 3. **array_name**: Generated name for the array
 4. **data_width**: Width of data elements in bits
 5. **addr_width**: Width of address bus (minimum 1 bit)
 
-The function ensures that address width is at least 1 bit even for single-element arrays.
+The function ensures that address width is at least 1 bit even for single-element arrays and
+keeps derived values grouped together for downstream consumers.
 
 **Project-specific Knowledge Required**:
 - Understanding of [SRAM memory model](/python/assassyn/ir/memory/sram.md)
@@ -130,7 +131,7 @@ def ensure_bits(expr_str: str) -> str:
 
 **Explanation**
 
-This function ensures that a Verilog expression string represents a Bits type, performing necessary conversions. It handles several cases:
+This function ensures that a Verilog expression string represents a Bits type, performing necessary conversions. It handles several cases using pre-compiled regexes for determinism:
 
 1. **UInt to Bits conversion**: Converts `UInt(width)(value)` to `Bits(width)(value)`
 2. **Already Bits**: Returns unchanged if already a Bits type

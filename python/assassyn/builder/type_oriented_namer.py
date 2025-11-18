@@ -59,7 +59,7 @@ class TypeOrientedNamer:
         """Convert operator symbols to descriptive names."""
         return {
             '+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'mod',
-            '&': 'and', '|': 'or', '^': 'xor',
+            '&': 'and_', '|': 'or_', '^': 'xor_',
             '<': 'lt', '>': 'gt', '<=': 'le', '>=': 'ge', '==': 'eq', '!=': 'neq',
             '<<': 'shl', '>>': 'shr',
             '!': 'not',

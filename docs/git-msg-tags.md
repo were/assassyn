@@ -4,6 +4,7 @@
 - [enhancement]: Refactors or other non-functional changes that improve the codebase.
 - [bugfix]: Bug fixes.
 - [docs]: Documentation changes.
+- [agent]: Changes related to AI-powered development tools, and rules.
 
 ## Frontend-related
 - [dsl]: Changes the public interfaces exposed to users.

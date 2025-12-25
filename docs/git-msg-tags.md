@@ -14,7 +14,7 @@
 - [codegen.sim]: Changes related code gen Rust simulator.
 - [runtime.sim]: Changes related to the runtime for the Rust simulator.
 - [codegen.rtl]: Changes related to RTL code gen using PyCDE.
-- [uarch.rtl]: Changes related to the runtime for RTL, particularty the FIFO, and credit counter.
+- [uarch.rtl]: Changes related to the runtime for RTL, particularly the FIFO, and credit counter.
 
 ## Test-related
 - [test.unit]: Unit tests.

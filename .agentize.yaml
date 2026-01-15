@@ -1,0 +1,5 @@
+project:
+  name: assassyn
+  lang: python
+git:
+  default_branch: master
